@@ -168,3 +168,111 @@ Em Ruby:
 false e nil → falsy
 todo o resto → truthy -> verdade
 =end
+
+#Encadeamento
+# select e map juntos
+users.select { |u| u[:active]}.map { |u| u[:name]}
+
+=begin
+Olha que interessante um select e map junto
+
+Isso -> users.select { |u| u[:active]}.map { |u| u[:name]}
+se chama encadeamento -> cada método recebe o retorno do anterior
+1º o select vai receber do bloco de código baseado na chave :active
+o hash de condição true
+depois este retorno hash, entra no bloco do map, e o map transforma o valor
+da chave :name, com condição true em um array
+
+no caso o que é transformado é ["William"], porque Ana a condição é false.
+=end
+
+#map e depois select
+users.map { |u| u[:name]}.select { |name| name.start_with?("A") }
+
+=begin
+Nesta caso o map vai transformar o :name William e Ane do hash em array
+Depois este array com os 2 nomes, entra no bloco de código do select
+O select não vê mais hash e sim array, por isso |name| não é chave :name
+select filtra somente Ana por conta da condição: Que inicia com 'A'
+|name| agora é cada string do array
+"William".start_with?("A") → false
+"Ana".start_with?("A") → true
+
+com isso é apresentado ['Ana']
+
+No anterior o map recebe hash do select
+Neste caso o select recebe array do map
+
+forma menos elegante de escrever a mesma coisa é
+  names = users.map { |u| u[:name] }
+  filtered = names.select { |name| name.start_with?("A") }
+  preferível o encadeamento
+=end
+
+# Simulando transformação de dados para resposta JSON
+
+# Passo 1 criando dados
+users = [
+  { id: 1, name: 'William', active: true },
+  { id: 2, name: 'Ana', active: false },
+  { id: 3, name: 'Alice', active: true }
+]
+
+# Passo 2 Filtrar usuários ativos
+active_users = users.select { |u| u[:active] }
+
+=begin
+Nesta passo a variável active_users recebe os dados do select
+que o bloco trouxa a ele, porém somente os de chave :active == true
+Retorno active_users = u-> [{ id: 1, name: 'William', active: true },
+             { id: 3, name: 'Alice', active: true }]
+=end
+
+# Preparar resposta para API (array de nomes, pronto para JSON):
+
+response = active_users.map { |u| {name: u[:name]}}
+=begin
+Nesta a variável response vai receber o array pronto para JSON
+
+a variável active_users contém um array, com hashs, somente com com chaves :active == true
+que foram filtradas acima
+dentro do bloco a chave name: atua como uma variável, porque
+vai receber de u, os hashs :name, de active_users. Por isso name:, atua como uma variável
+com o mesmo tipo hash
+ agora o map varre o |u| que esta com o hash :name e transforma em array
+ que por sua vez a variável response recebe
+
+ agora temos dados como array para JSON
+
+ observação: em Rails usamos para filtrar o where(onde)
+ e, para transformar em array no lugar do map, usa o pluck(arrancar, extrair)
+=end
+
+# Performa-se em API
+users.select { |u| u[:active]}.map {|u| u[:name]}
+
+users.map { |u| u[:name] }.select { |name| name.start_with("A") }
+
+=begin
+Pergunta:
+Eles fazem a mesma coisa?
+Qual faz menos trabalho?
+Qual se parece mais com código de API?
+
+Quando se trabalho com API: primeiro filtra e depois trabalha os dados.
+è o que p primeiro esta fazendo
+
+Primeiro filtra (remove os inativos)
+Depois transforma (extrai só os nomes)
+Trabalha com menos dados
+Menos iteração
+Menos memória
+
+Mais eficiente
+
+O segundo começa transformando todos os dados e depois filtra
+Trabalha com mais dados do que precisa
+Faz transformação antes de saber o que será descartado
+Pode ser aceitável, mas não é o ideal
+
+=end
