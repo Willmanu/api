@@ -2,17 +2,23 @@
 # APIs Application Programming Interface ( Interface de Programação de Aplicações)
 
 =begin
-Mas antes definir as estruturas de código
+Mas antes -> definir as estruturas de código para ferramentas
+de manipulação para API
+
 Estruturas de dados usa → [] e {}
 [] para array
 {} para hash
 Blocos de código → {} ou do...end
-
+	não é uma regra para seguir a risca
+ {} usa-se em blocos curtos de uma linha
+  do ...end use-se bloco mais de uma linha
+	porém tanto faz, fazem a mesma coisa
 =end
+
 # Entrada de dados para manipulação
 users = [
-  {id: 1, name: 'William', active: true},
-  {id: 2, name: 'Ana', active: false}
+  { id: 1, name: 'William', active: true },
+  { id: 2, name: 'Ana', active: false }
 ]
 
 =begin
@@ -72,7 +78,7 @@ Um Hash guarda apenas as duas chaves necessárias.
 
 # selecionando um item do hash com uma variável seguindo uma condição
 
-users.select { |u| u[:active] == true}
+users.select { |u| u[:active] == true } # bloco curto usando {}
 
 =begin
 no caso acima temos o método select.
@@ -90,7 +96,7 @@ como Ana é falso, o select não a seleciona.
 
 # loop .each do || end
 
-users.each do |u|
+users.each do |u|   # bloco com mais de uma linha usando do ..end
   puts u[:name]
 end
 =begin
@@ -116,7 +122,6 @@ end
 
 # usando o metodo .map
 # Primeiro caso
-
 names = users.map do |u| u[:name] end
 
 =begin
@@ -139,7 +144,7 @@ users.map do |u| { id: u[:id], name: u[:name] } end
  Mas o CONTEÚDO do array é exatamente o que o bloco devolve
 
  diferente do caso anterior
-esta variável |u| tem a sua frente um hash
+ esta variável |u| tem a sua frente um hash
  Neste caso temos a variável |u| recebendo hash
  temos as chave id: e name: recebendo dentro de si as strings id e name
  do hash u
@@ -151,29 +156,29 @@ esta variável |u| tem a sua frente um hash
  O map olha que |u|, é um hash e o que ele faz é colocar este
  has dentro de um array
 
-[{:id=>1, :name=>"William"}, {:id=>2, :name=>"Ana"}]
+ [{:id=>1, :name=>"William"}, {:id=>2, :name=>"Ana"}]
 
   Comparação direta (lado a lado)
-# EACH → ação
-users.each { |u| puts u[:name] }
-
-# SELECT → filtro
-users.select { |u| u[:active] }
-
-# MAP → transformação
-users.map { |u| u[:name] }
-
-Método	        Bloco retorna   	     Resultado
-each	        qualquer coisa	          ignora
-select	     true / false	       filtrado só true e faz um novo array
-map	         qualquer valor	         transforma em array
-
-Regra de ouro (guarde isso)
-
-O método manda.
-O bloco obedece.
-
-O bloco não decide o formato do retorno, quem decide é o método.
+ # EACH → ação
+ users.each { |u| puts u[:name] }
+ 
+ # SELECT → filtro
+ users.select { |u| u[:active] }
+ 
+ # MAP → transformação
+ users.map { |u| u[:name] }
+ 
+ Método	        Bloco retorna   	     Resultado
+ each	        qualquer coisa	          ignora
+ select	     true / false	       filtrado só true e faz um novo array
+ map	         qualquer valor	         transforma em array
+ 
+ Regra de ouro (guarde isso)
+ 
+ O método manda.
+ O bloco obedece.
+ 
+ O bloco não decide o formato do retorno, quem decide é o método.
 =end
 
 # método start_with
@@ -266,11 +271,31 @@ users.map { |u| u[:name]}.select { |name| name.start_with?("A") }
 
  Resumindo JSON é um intérprete, permite que linguagem diferente
  se comuniquem.
+
+ JSON recebe os seguintes Tipos de dados:
+ Strings, Números, Booleano(true e false), Null(nulo ou vazio)
+
+ Tipos de Dados Estruturados:
+ {} Um hash ou coleção não ordenada de pares chave/valor delimitada
+  por chaves e, deve ser sempre uma string entre aspas
+
+ [] Array ou Matriz que é: uma lista ordenada de valores delimitada
+  por colchetes ([]), onde cada elemento pode ser de qualquer um dos
+  tipos de dados acima, incluindo outros objetos.
+
+  Eles são considerados "estruturados" porque funcionam como recipientes
+  que podem conter outros valores, inclusive outros objetos e arrays aninhados.
+
+ Por que não existem outros Tipos de Dados Estruturados ?
+ O JSON foi desenhado para ser uma notação mínima e independente de linguagem.
+ Tipos mais específicos (como Datas) não existem nativamente; para
+ representá-los, você deve usar os tipos básicos disponíveis,
+ como uma String formatada.
 =end
 
 # Simulando transformação de dados para resposta JSON
 
-# Passo 1 criando dados
+# Passo 1 criando dados(como se estivessem no BD)
 
 users = [
   { id: 1, name: 'William', active: true },
@@ -292,13 +317,13 @@ active_users = users.select { |u| u[:active] }
 
 response = active_users.map { |u| { name: u[:name] } }
 =begin
-Nesta a variável response vai receber o array pronto para JSON
-
-a variável active_users contém um array, com hashs, somente com com chaves :active == true
-que foram filtradas acima
-dentro do bloco a chave name: atua como uma variável, porque
-vai receber uma string de u[:name]
-Perceba que name: chave para hash recebe a string da chave :name
+ Nesta a variável response(resposta) vai receber o array pronto para JSON
+ 
+ a variável active_users contém um array, com hashs, somente com com
+ haves :active == true que foram filtradas acima
+ Dentro do bloco a chave name: atua como uma variável, porque
+ vai receber uma string de u[:name]
+ Perceba que name:, chave para hash, recebe a string da chave :name
 
  agora o bloco entrega para o map um hash
  o map pega este hash e transforma em um array
@@ -309,8 +334,8 @@ Perceba que name: chave para hash recebe a string da chave :name
 
 =end
 
-# Performa-se em API
-users.select { |u| u[:active]}.map {|u| u[:name]}
+# Performa-se em API, primeiro filtra depois trata os dados
+users.select { |u| u[:active] }.map { |u| u[:name]}
 
 users.map { |u| u[:name] }.select { |name| name.start_with("A") }
 
@@ -342,19 +367,73 @@ users.map { |u| u[:name] }.select { |name| name.start_with("A") }
  Até agora o que foi feito, é exatamente o que uma API faz
  O que precisa ser feito agora é:
 
-1 Um endpoint
-2 Um formato de resposta (JSON)
-3 Um lugar certo (controller)
+ 1º Um endpoint
+ 2º Um formato de resposta (JSON)
+ 3º Um lugar certo (controller)
 
-Mentalidade de API (grave isso)
-Uma API REST responde sempre a 3 perguntas:
+ O que é API (ajustando sua definição)
+ Definição correta em português simples:
 
-O que o cliente pediu?
-Onde estão os dados? (banco)
-Como vou devolver esses dados?
+ API é um contrato de comunicação entre sistemas.
+ Ela define:
+ o que pode ser pedido
+ como pedir
+ o que será devolvido
+ em qual formato
+ 
+ Não importa se o outro lado é:
+ Ruby
+ JavaScript
+ Java
+ Python 
+ um celular
+ 
+ Todos falam HTTP + JSON, repito, HTTP + JSON.
 
-No exemplo feito, mentalmente seria:
-“Me dê os usuários ativos, mas só com id e nome”
+                             REQUISIÇÂO e RECURSO
+
+ Mentalidade de API (grave isso)
+ Uma API sempre responde uma necessidade de negocio
+ Cadastrar clientes
+ Processar pagamentos
+ Listar pedidos ativos
+ Integrar com um app mobile
+ Permitir que parceiros consumam dados
+  
+ Uma API nasce porque sistemas não devem viver isolados.
+ Ela existe para expor RECURSOS de um sistema de forma
+ controlada, permitindo que outros sistemas os acessem por
+ meio de requisições.
+
+ RECURSO, especialmente em API REST, são dados persistidos
+ Usuário, pedidos,produtos etc..
+ 
+ REQUISIÇÂO é a implementação técnica dessa necessidade
+ para atender uma requisição, alguém precisou escrever código
+ com lógica de negócio
+ 
+ Por exemplo o que ja vimos acima
+ Listar usuários ativos = necessidade de negocio
+
+ Para essa requisição funcionar
+ Você precisa de código com lógica:
+ validar parâmetros
+ decidir o que pode ou não pode
+ buscar dados
+ aplicar regras de negócio
+ montar a resposta
+
+ Uma API REST responde sempre a 3 perguntas:
+ O que o cliente pediu?
+ Onde estão os dados?
+ Como vou devolver esses dados?
+ 
+ Nos exercícios acima feitos, mentalmente seria:
+ “Me dê os usuários ativos, mas só com id e nome”
+
+ O que o cliente pediu? -> usuários ativos, mas só com id e nome
+ Onde estão os dados? -> no BD
+ Como vou devolver esses dados? -> aplicando programação a logica de negocio
 =end
 # Dados (simulando banco)
 users = [
@@ -366,25 +445,25 @@ users = [
 # Lógica de negócio (o coração da API)
 
 users_active = users.select { |u| u[:active] } # filtrando
-response = users.map do |u|	{ id: u[:id], name: u[:name] } end # transformando
+response = users.map { |u|	{ id: u[:id], name: u[:name] } } # transformando
 
 =begin
-Isso é:
-Filtro
-Transformação
-Formato de resposta
-
-Resposta da API” (simulada)
-Se isso fosse uma API de verdade, o cliente receberia algo assim (em JSON):
-[ {"id": 1, "name": "William"},
-  {"id": 2, "name": "Alice" }
-]
+ Isso é:
+ Filtro
+ Transformação
+ Formato de resposta
+ 
+ Resposta da API” (simulada)
+ Se isso fosse uma API de verdade, o cliente receberia algo assim (em JSON):
+ [ {"id": 1, "name": "William"},
+   {"id": 2, "name": "Alice" }
+ ]
 =end
 
 # Conexão de comando direta com Rails (importante)
 =begin
- Todos os comando feitos até foram em Ruby puro
- Agora vou comprar com comando para rails
+ Todos os comando feitos até aqui foram em Ruby puro
+ Agora vou comparar com comandos para rails
 =end
 
 # filtro em ruby
@@ -397,14 +476,393 @@ User.where(active: true) # acessa o Banco
 users.map { |u| { id: u[:id], name: u[:name] } }
 
 # map em rails
-User.map { |u| { id: u.id, nome: u.name } }
+User.pluck(:id, :name)
+# ou
+User.slect(:id, :name).as_json
 
 =begin
-Comparação clara
-Ruby puro	                      Rails / API
-Array em memória	           Banco de dados
-select	                           where
-map	                           select / as_json
-puts	                        render json
+ pluck significa -> arrancar, depenar, puxar rapidamente etc.
+ Exemplo do uso real da palavra
+ pluck a chicken → depenar uma galinha
+ pluck a string → puxar a corda de um instrumento
+ pluck a flower → arrancar uma flor
+ 
+ O pluck aqui fazendo:
+ arrancando só esses campos do BD
+ pega śo isso aqui e me devolve
+ 
+ Enquanto o .map trabalha transformando os dados na memória,
+ o pluck vai direto no BD, pega ou arranca apenas id e name,
+ devolve só os valores crus
+ 
+ Resultado:
+ [[1, "Ana"], [2, "João"]]
+ 
+ Vantagens:
+ Não instancia objetos User
+ Vai direto no banco
+ Muito mais performático
+ 
+ Desvantagem:
+ Não retorna hashes
+                                 as_json
+                              
+ Para retornar hash acessando diretamente o BD(melhor que trabalhar na memória)
+ podemos usar a combinação de dos métodos select e as_json
+=end
+User.select(:id, :name).as_json
+=begin
+ O retorno é:
+ [
+   { "id" => 1, "name" => "William" },
+   { "id" => 2, "name" => "Alice" }
+ ]
+ as_json é um método do Rails que transforma um objeto (ou coleção)
+ em uma estrutura Ruby pronta para virar JSON.
+ 
+ Importante:
+ não retorna JSON em texto
+ retorna Hash / Array de Hashes
+
+ Resumo mental(IMPORTANTÍSSIMO)
+ .map trabalho em memória
+ where, select e pluck trabalha direto no BD
+=end
+
+                                     # API RESTful
+=begin
+ A partir de agora, vamos ver todo conceito visto anterior
+ conversando com banco de dados.
+
+ E isso se chama APIRESTful
+ API -> Application Programming Interface
+ (Interface de Programação de Aplicações)
+
+ RESTful -> termo derivado de REST -> Representational State Transfer
+ (Transferência de Estado Representacional)
+ No contexto de TI, RESTful não se traduz, mas o termo inglês
+ significa "tranquilo", "repousante" ou "relaxante"
+
+ Uma API RESTful: Ponte que permite a comunicação entre sistemas, 
+ expondo RECURSOS por meio do protocolo HTTP, seguindo os princípios
+ do estilo arquitetural REST e utilizando métodos como GET, POST, PUT e DELETE.
+
+ GET é Buscar
+ POST é criar
+ PUT é atualizar
+ DELETE é excluir
+
+ A API é uma espécie de tradutor entre linguagem, faz a ponte entre...
+ A aplicação Ruby conversando com outras linguagem
+ (C#, Java, C++, C, Python etc)
+ Faz essa ponte seguindo o protocolo HTTP
+
+
+ Vamos sair do “Ruby que roda na RAM” (porque foi isso que foi feito até agora)
+ e entrar no Ruby que conversa com banco, que é o que se chamam de API RESTful.
+
+ Tudo que dá para filtrar no banco, deve ser filtrado no banco.
+ Ruby entra depois, só para ajustar formato
+
+ Como estamos falando em buscar dados no banco uma coisa muito importante é:
+ Não fazer isso de forma errada
+ Por exemplo
+=end
+
+users.User.all
+users.select { |u| u.active }
+=begin
+Este código na primeira a variável users, passa a ser um objeto
+que representa uma consulta SQL para buscar todos os usuários
+
+Isso é Rails entrando em ação com ActiveRecord::Relation
+users recebe um ActiveRecord::Relation que representa todos
+os registros da tabela users.
+
+O Rails com users = User.all, não busca os dados imediatamente
+Está linha de código se copara a query do SQL SELECT * FROM users;
+SELECT é selecionar
+* é tudo
+FROM é a partir
+ou seja, selecionar tudo a partir da tabela users(agora representante de User)
+Atenção: Mas essa query só é executada quando os dados forem usados
+=end
+
+users = User.all # ainda não acessou o banco
+users.select { |u| u.active } # AGORA executa SQL
+# Isso se chama lazy loading (carregamento preguiçoso)
+
+=begin
+Essas linhas de código acima é o que se chama de errado fazer
+
+Problema:
+Busca TODOS os usuários no banco
+Joga tudo na memória
+Filtra depois → lento, perigoso
+=end
+
+# A forma correta de se fazer o filtro
+users = User.where(active: true)
+
+=begin
+Neste exemplo o filtro não é feito em memória como o anterior
+o filtro é feito no banco e ele manda para memória ja active true
+Vantagens:
+Banco faz o trabalho pesado
+Menos memória
+Muito mais rápido
+=end
+
+# Exemplo de uma API pura real em Rails
+
+class UsersController < ApplicationController
+  def index
+   users = User.where(active: true) # BD me devolve só users ativos
+
+    response = users.map do |u| # aqui escolho quais campos vão para resposta
+		{
+			id: u.id,         
+			name: u.name
+		}
+    end
+
+	render json: response # devolve isso ao cliente json
+  end
+end
+
+# Melhor que esse acima é esse baixo
+
+class UsersController < ApplicationController
+  def
+    users = User.where(active: true)
+	
+	render json: users.select(:id, :name)
+  end
+end
+=begin
+ No anterior com o método .map, o Ruby está montando na memória
+ No debaixo com o método .select, a interação é direto no BD
+  O BD devolve só essas colunas e Ruby não perde tempo montando
+
+ render -> é um método que vem de ActionController e serve
+ para construir e enviar a resposta HTTP da requisição
+ pronto para frontend, mobile, Postman, etc.
+
+ render define o corpo da resposta e o formato.
+
+ json: chave de um hash ruby passada como argumento para o método
+ render. É como se fosse uma varável que recebe o formato hash.
+ 
+ Isso é API REST real, não exercício acadêmico.
+ Este código é escrito na camada C do MVC, controller
+ class UsersController significa: 
+ “Estou criando um controller chamado UsersController,
+ que herda comportamentos do ApplicationController o pai dos controllers.”
+ 		
+ MVC no Rails
+ Camada	                Pasta	              Responsabilidade
+ Model	                app/models	        Regras + banco
+ View	                app/views	        HTML (não usamos em API)
+ Controller	         app/controllers	  Recebe requisição, chama Model, responde
+ 
+ Em API Rails, quase não se usa View
+ o controller fala JSON direto
+ 
+ O controller orquestra o fluxo da requisição no padrão MVC.
+ recebe a requisição, coordena a lógica da aplicação usando o Model
+ e escolhe qual View será renderizada.
+ Serve para:
+ Autenticação
+ Autorização
+ Filtros (before_action)
+ Configuração comum
+
+                      Regras de Comunicação de REST
+  
+ HTTP (protocolo)
+ REST (convenção/estilo arquitetural)
+ Rails (framework que implementa REST)
+
+ HTTP não tem métodos como uma linguagem de programação tem (métodos/funções).
+ O que o HTTP tem são VERBOS: GET, POST, PUT/PATCH e DELETE
+ 
+ Rails pegou os verbos do HTTP e criou um padrão de métodos para tratá-los
+   REST: a ponte entre HTTP e Rails
+   REST define como usar HTTP para acessar recursos.
+    Regra central do REST:
+     O verbo diz a intenção
+     A URL diz o recurso
+  Exemplo:
+  GET /users
+  Verbo: GET → quero LER
+  Recurso: users → coleção de usuários(Tabela no BD)
+
+  Os métodos Rails são uma “tradução” do HTTP
+   Rails traduz requisições HTTP em métodos Ruby
+ Regras para users:
+ Verbo HTTP	             URL	          Método do Controller Rails
+ GET	        +         /users	     ->          index
+ GET	        +         /users/:id	 ->          show
+ POST         +         /users	     ->          create
+ PUT	        +        /users/:id	   ->         update
+ DELETE    	  +        /users/:id	   ->         destroy
+
+ O verbo sozinho não define o método
+ Verbo + URL juntos definem o método do controller
+   
+  Perceba que o GET aparece para 2 URL: users e users id
+  Quando é users isso diz respeito a tabela inteira com todos os usuários do BD
+  
+  Exemplo:
+=end
+class UsersController < ApplicationController
+  def index
+    users = User.all
+    render json: users
+  end
+end
+=begin
+Quando acontece isso acima
+O Rails interpreta assim:
+ Verbo: Get
+ Recurso: coleção(Tabela users, sem ID)
+ Action(ação) Rest padrão: index
+
+ A pergunta para: Por que GET pode ser index OU show?
+ é essa acima
+ GET + coleção(Tabela users, sem ID) → index ➡ lista todos os usuários
+ 
+ GET + ID → show ➡ mostra um usuário específico
+
+
+                        Construção de endpoints reais
+
+ Serão construindo 3 endpoints aqui
+ 1 exemplo
+ Get/users/5
+ Digamos que meu sistema esta rodando em:http://localhost:3000
+ Posso digitar no navegador http://localhost:3000/users/5
+ E o navegador faz a requisição GET automaticamente.
+ ou seja
+ quando acrescento digitando users/5 ao endereço http://localhost:300
+ estou pedido para acessar o usuário de id 5
+ o navegador daria o Get(pegar) me mostrando este user
+ Isso é uma rota HTTP
+ 
+ Antes de seguirmos, vamos entender uns conceitos aqui
+=end
+
+                            # RESOURCE, URI e URL
+
+=begin
+ RESOURCE -> recurso -> são elementos de informação,
+ que através de um identificador global podem se manipulados
+
+ IMPORTANTÍSSIMO -> elementos de informação + identificador global
+ 
+ Resumo: RECURSO são "COISAS", que podem ser manipuladas através de um ID
+ 
+ RECURSO é aquilo que eu quero manipular
+
+ aqui http://localhost:3000/users/5 o users/5 é que, eu quero manipular
+ logo é meu recurso, aqui neste exemplo, identificado como users
+
+ A nomeação de um recurso sempre é formada por um substantivo, nunca um verbo.
+
+
+
+ URI -> Uniform Resource Identifier(Identificador Uniforme de Recursos),
+ ou seja, é uma cadeia de caracteres compacta usada para identificar
+ ou denominar um recurso na internet
+
+ IMPORTANTÍSSIMO -> cadeia de caractere, identificar o RECURSO
+ então é isso aqui -> //localhost:3000/users/5
+
+ identificador é algo único, não vai existir igual
+ por isso é um identificador único de RECURSO
+ Quando acessam a internet colocando essa cadeia de caracteres,
+ é o meu recurso que procuram
+
+ URL -> Uniform RESOURCE Locator -> Localizador Padrão de RECURSO,
+ é o endereço de um RECURSO disponível em uma rede
+
+ IMPORTANTÍSSIMO -> localizador Padrão + Recurso
+  O meu RECURSO é o users, esse é o que eu quero manipular
+  identificado no final de todos os caracteres //localhost:3000/users/5
+
+  URI é -> //localhost:3000/
+  
+  Então URL é o HTPP -> protoclo + URI + RECURSO
+  endereço completo disponível em uma rede
+ Como tudo isso http://localhost:3000/users/5 na internet se acha meu RECURSO
+=end
+
+# Sistema de fora pedindo dados para minha API
+fetch("http://localhost:3000/users/5")
+  .then(response => response.json())
+  .then(data => { console.log(data.name)})
+
+=begin
+Acima é um exemplo real em frontend (JavaScript)
+pedindo dados para minha API, no caso ele quer um id
+
+Abaixo esta o código de resposta da minha API para o Javascript
+=end
+
+  def show
+    users = User.find_by(id: params[:id]) # params esta trazendo o que veio do cliente
+
+	if users
+		render json: users
+	else
+		render json: { error: "User not found" }, status: 404
+    end
+  end
+
+=begin
+ params -> parâmetro
+ TUDOOO!! que chega para o servidor vindo de fora
+ params Ééé!! a caixa onde o Rails guarda tudo que veio do pedido do cliente
+ Ele pode conter:
+ dados da URL
+ dados do formulário
+ dados do JSON enviado
+ query params (?page=2)
+ 
+ find( encontrar) by(por), ou seja, encontre por.
+ O mais usado em API porque é o mais seguro
+ Resumo o método show
+ 
+                           INTERPRETAÇÂO DO CÓDIGO
+ 
+ Aqui abaixo é a requisição do Javascript:
+ fetch("http://localhost:3000/users/5") 
+ .then(response => response.json()) 
+ .then(data => { console.log(data.name)})
+ 
+ nesta requisição tem o protocolo HTTP + URI + o Recurso desejado que é o users/5
+ 
+ Como o Get é users/id, ou seja, um id especifico
+ método show di-acordo com padrão REST
+   GET	 + /users/:id	 ->  método show em controller
+ 
+  Show significa mostrar, então essa função vai mostrar para a requisição
+  que veio através do Javascript, pelo método Get o Recurso desejado que users/5
+ 
+  params contém em sí as informações do recurso desejado
+ 
+  find_by -> encontrar por, é um método do ActiveRecord , que pega o retorno do bloco
+
+  
+  find_by em português:
+ “Encontre um registro no banco que bata com essa condição(params)
+
+ o bloco é composto por uma chave id: que vai receber em si o
+ objeto com chave id: que User pediu para encontrar(find) no banco,
+ baseado nas informações que params está trazendo e, users a variável
+ que vai receber esse objeto ActiveRecord
+ render é um método que vai devolver a resposta que esta na chave json:
+ que recebeu o objeto ActiveRecord de users, se tiver informação,
+ se não, o que vai devolver é a mensagem que o método error produziu
 
 =end
