@@ -770,7 +770,6 @@ O Rails interpreta assim:
  A nomeação de um recurso sempre é formada por um substantivo, nunca um verbo.
 
 
-
  URI -> Uniform Resource Identifier(Identificador Uniforme de Recursos),
  ou seja, é uma cadeia de caracteres compacta usada para identificar
  ou denominar um recurso na internet
@@ -797,6 +796,7 @@ O Rails interpreta assim:
  Como tudo isso http://localhost:3000/users/5 na internet se acha meu RECURSO
 =end
 
+#                         1º endpoint show
 # Sistema de fora pedindo dados para minha API
 fetch("http://localhost:3000/users/5")
   .then(response => response.json())
@@ -865,4 +865,342 @@ Abaixo esta o código de resposta da minha API para o Javascript
  que recebeu o objeto ActiveRecord de users, se tiver informação,
  se não, o que vai devolver é a mensagem que o método error produziu
 
+  RESUMO:
+  O método show é um endpoit REST que responde a uma requisição GET
+  feita por outro sistema, retornando um recurso especifico.
+  saiu do meu sistema, vai para outro em formato JSON
 =end
+
+#                           2º endpoint post
+# Sistema de fora enviando dados para se criar recurso para meu
+=begin
+ Outro sistema envia dados
+ meu sistema recebe
+ meu sistema decide o que fazer com esses dados
+ Normalmente: os cria no banco
+ ATENÇÂO: O recurso ainda não existe quando chega
+
+ O método utilizado para isso é create
+=end
+
+def create
+end
+
+=begin
+ quando os dados chegarem ao meu sistema, pelo post/users
+ meu sistema ja sabe o que fazer, uma vez que o método foi criado 
+
+ Sem esse endpoint 
+  o post chega
+  Rails não sabe responder
+  erro 404/routing error
+
+ Vamos ver uma situação real
+ Imagine um sistema frontend (site, app, painel admin) que precisa
+ cadastrar um usuário
+  Então temos:
+  Tela "Cadastrar Cliente"
+  Formulário de signup (ou formulário de cadastro/inscrição) 
+  App mobile criando conta
+  Outro sistema integrando com o seu
+
+ Esse sistema NÃO acessa o banco direto
+ Ele faz uma requisição HTTP para sua API
+=end
+
+                     # REQUISIÇÂO FEITA PELO FRONT o POST
+# Javascript
+fetch("http://localhost:3000/users", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    name: "Carlos",
+    active: true
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data))
+
+=begin
+ Então temos o Javascript fazendo um post, ou seja,
+ enviando dados para meu sistema
+ body é o corpo da requisição
+ Perceba que no javascript temos o body, em JSON, com os dados enviados:
+  name: "Carlos", active:true
+
+ Claro que em um cadastro mandão muito mais que só o nome, porém aqui ja da
+ para entender como chega as informações até meu sistema.
+ 
+ Quando chegam o Rails recebe isso no params = { "name" => "Carlos", "active" => true }
+
+
+  Agora preciso construir um endpoint para receber esses dados
+  e assim construir esse recurso no meu BD
+=end
+
+#                            ENDPOINT POST
+
+class UsersController < ApplicationController
+  def create
+    user = User.new(
+      name: params[:name],
+      active: params[:active]
+    )
+    if user.save
+      render json: user, status: 201
+    else
+      render json: {errors: user.erros.full_messages}, status: 422
+    end
+  end
+end
+=begin
+ Acima temos o endpoint rails para receber os dados
+
+ user é a variável que está recebendo os o User.New, ou seja,
+ novo objeto usuário
+ chave name: recebendo o nome deste novo usuário pelo
+ params através de sua chave :name
+ o mesmo acontece com active
+
+ se existir e for salvo no BD esse novo user, o render devolve status 201
+   se não, devolve error e status 422
+
+ Na maioria das vezes o model valida a entrada do dados e confirma ao controller
+   com false ou true
+
+
+ Modelo mental FINAL (guarda isso)
+  GET /users/:id
+  Recurso já existe
+  Cliente pede
+  Seu sistema entrega
+
+ POST /users
+  Recurso não existe
+  Cliente envia dados
+  Seu sistema cria o objeto e assim o recurso
+
+ show é um endpoint que entrega dados do meu sistema para outro.
+ create é um endpoint que recebe dados de outro sistema para 
+ criar algo no meu banco.
+
+=end
+
+#                      Proximo endpoint é o PUT
+
+=begin
+ PUT = atualizar/substituir
+ Como o próprio nome revela ente endpoint vai servir para modificar,
+ ou seja, atualizar o recurso
+ Neste caso ja temos o recurso, ele já existe.
+
+ Digamos que seja necessário atualizar um user
+ VC entra no perfil do user que quer modificar, ali tem um
+ botão atualizar ou editar e, quando clica abre o formulário.
+
+ Agora é só preencher com as novas informação.
+ Ao confirmar essa mudança, e ai que acontece a requisição, ou seja,
+ o processo de atualização do recurso.
+  
+  Vamos ver o processo em HTML
+  Esse exemplo junta HTML + HTTP + Rails + MVC
+=end
+
+<form action="/user/5" method="post">
+ <input type="hidden" name="_method" value="put">
+
+   <input type="text" name="user[name]" value="William">
+  <input type="checkbox" name="user[active]" checked>
+
+  <button type="submit">Atualizar</button>
+</form>
+
+=begin
+ A primeira informação que precisamos aprender aqui é:
+ HTML puro só suporta dois métodos em form
+ GET
+ POST
+
+ Não existe PUT, PATCH, DELETE em <form> HTML
+ Isso não é limitação do Rails, é do HTML + browser.
+ 
+  A solução do Rails e de outros frameworks foi:
+    Criar um truque padrão de mercado chamado method
+    OVERRIDE(substituir, subscrever)
+
+  Como html só entende post, o input vai subscrever o post para put
+   Ele faz assim:
+   O browser envia POST
+   Dentro do corpo do POST vai: _method=put
+
+    O browser esta levando post
+    Quando o browser entrega ao meu sistema, o Rails intercepta
+    antes de chegar no controller e covert internamente, já que agora
+    passou do browser, o rails sabe o que é put. Ele subscreve(override)
+    para put.
+     POST + _method=put  →  PUT
+  
+   O navegador não sabe que isso virou PUT.
+   Quem faz a “mágica” é o Rails no servidor.
+
+  Tudo isso acontece nas duas primeiras linhas do form,
+  essas duas abaixo:
+  <form action="/user/5" method="post">
+ <input type="hidden" name="_method" value="put">
+    
+ Perceba que ao criar o form ele tem um atributo action
+  form action=
+  , ou seja,
+  é um form que vai executar uma ação ao clicar em atualizar
+  E a ação é o override
+
+ o input logo abaixo de form action, tem o atributo "hidden" que
+ significa -> oculto, ou seja, é um tipo de input que o usuário não ve
+ ele serve para ajudar no override, somente o servido o vê.
+
+ No mesmo input tem o atributo com a string -> name="_method"
+  Esse nome é especial para o Rails.
+  Rails olha para o corpo da requisição e pensa:
+  “Tem _method aqui? Então vou sobrescrever o HTTP method.”
+
+  E o atributo value com "put"
+   Isso diz ao Rails:
+  “Trate essa requisição como PUT”
+
+ Nas outras linhas
+   <input type="text" name="user[name]" value="William">
+   <input type="checkbox" name="user[active]" checked>
+
+   <button type="submit">Atualizar</button>
+
+  São os inputs que vão tratar da nava informação
+   aqui:
+   <input type="text" name="user[name]" value="William">
+
+   Temos type="text"
+    É o campo visível
+    O famoso retângulo onde o usuário digita
+
+     name="user[name]" — aqui está a chave
+     Isso não é variável HTML.
+     É uma convenção de envio de dados.
+     Quando o form é enviado, o navegador monta isso:
+       user[name]=NovoNome
+    
+   Rails interpreta automaticamente como:
+     params = {user: { name: "NovoNome" } }
+    
+     ou seja isso user[name]=NovoNome vira params
+    Esse formato com colchetes (user[...]) existe exatamente
+    para criar hashes no backend.
+
+  E por fim value="William"
+   esse é representa o valor atual, quando abre o formulário mudar
+    ao inserir um novo esse sera apagado
+
+
+ Aqui
+  <input type="checkbox" name="user[active]" checked>
+  Esse input é para tratar se está ativo ou não, true ou false
+  O usuário ao abrir o formulário de atualização, vai ver uma caixinha
+  de marcação, ela começa com marcada.
+  Se tirar a marcação este campo não é enviado. Poe isso checked
+  
+   Dai a necessidade de o Rails usa helpers que lidam com isso melhor
+   (form_with, check_box etc).
+
+ Aqui name="user[active]" é a mesma ideia do user[name]=NovoNome
+
+
+ O BOTÂO
+  <button type="submit">Atualizar</button>
+ Quando clica:
+ O browser coleta todos os inputs
+ Monta o corpo da requisição
+ Envia para /users/5 via POST
+
+  O que o browser realmente envia
+   POST /users/5
+
+   O body da requisição fica assim:
+    _method=put
+     user[name]=William
+     user[active]=1 -> este 1, é o ticado do checkbox
+       
+
+ O Rails pega tudo isso e transforma nisso:
+  request.method # => put
+  params = { user: {name: "novoname", active: "1"}, id: "5"}
+
+  E envia para o controller, e este procura o endpoint: update
+=end
+class UsersController < ApplicationController
+  def update
+    user = User.find_by(id: params[:id])
+
+    if user&.update(user_params)
+      render json: user
+    else
+      render json: {error: "User not found or invalid data"}
+    end
+  end
+
+  private
+
+  def user_params
+    params.require(:user).permit(:name, :active)
+  end
+end
+
+=begin
+ No código temos elementos novos:
+ & que parece um operador logico, chama-se safe(seguro)navigate operator
+ Em português: navegação segura
+ Ele chama o método só se existir user
+
+ user_params o método privado
+  Antes do código retornar com a resposta, ele precisa fazer a atualização
+    Por isso o método privado user_params fazendo isso
+
+  Se ó código fosse user.update(user_params) sem o & safe pode
+  quebrar a aplicação aqui
+   Se user for nil → 💥 erro (NoMethodError)
+   Porque, de repente o user é nil-> não existe
+  
+  Por isso usa o & safe navigate(navegação segura), ou seja,
+   Se user existe → chama update
+   Se user é nil → retorna nil (sem erro), avisa que não exite usuário
+    Se o usuário existir e a atualização der certo…”
+
+ O def update começa com o filtro procurando pelo id que esta no params
+  user = User.find_by(id: params[:id])
+  achando entra na variável user
+
+ Aqui if user&.update(user_params) é:
+   user existe?
+   Se existir → tenta atualizar com user_params
+
+   Aqui antes de entrar no if, vai no método private
+    params esta com os dados e lá tem os métodos: require e permite
+     Isso aqui é segurança 🔐
+     Chama-se Strong Parameters -> Parâmetros Fortes
+      
+     require -> método 
+     permite -> método
+   update retornou true?
+  Se sim → entra no if
+  update só retorna true se:
+  passou nas validações
+  salvou no banco
+
+
+
+   private
+
+  def user_params
+    params.require(:user).permit(:name, :active)
+  end
+=end
+
