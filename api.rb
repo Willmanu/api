@@ -1156,51 +1156,73 @@ end
 
 =begin
  No código temos elementos novos:
- & que parece um operador logico, chama-se safe(seguro)navigate operator
- Em português: navegação segura
- Ele chama o método só se existir user
+ & -> que parece um operador logico, chama-se safe(seguro)navigate operator
+ Em português: operador de navegação segura
+ Ele chama o método(user_params) só se existir user no BD
+ ANTENÇÂO o & age no BD
 
- user_params o método privado
-  Antes do código retornar com a resposta, ele precisa fazer a atualização
-    Por isso o método privado user_params fazendo isso
+ user_params -> o nome do método ou (função) privado
 
-  Se ó código fosse user.update(user_params) sem o & safe pode
-  quebrar a aplicação aqui
-   Se user for nil → 💥 erro (NoMethodError)
-   Porque, de repente o user é nil-> não existe
+
+ Antes do código retornar com a resposta para o controller, ele precisa fazer a atualização.
+ Olhando para o método privado, no fim dessa estrutura de código, temos o params que carrega em si os dados vindo de fora para atualização.
+ Na frente do params temos 2 métodos: require e permit que atuam nos dados que vem de fora.
+ 
+ Neste caso, são 3 os dados de que vem de fora: :user, :name e :active.
+ Eles vem com a intenção de persistir no nosso BD. E Quando falamos em dados entrando no BD, temos que tomar muito cuidado. Por isso precisamos pensar na modelagem de dados que traga SEGURANÇAA!! e é o que esses dois métodos vão fazer analisando os dados que vem de fora. 
+
+            AQUI VAMOS FALAR DE SEGURANÇAAA! STRONG PARAMETERS(parâmetros fortes)
+ 
+ .require(exigir) neste caso é um método que exige que a chave :user exista
+ se não existir-> ActionController::ParameterMissing -> isso é: uma exceção(objeto que representa um erro) que o Ruby on Rails lança quando você exige um parâmetro obrigatório no seu controller, mas ele não é enviado na requisição
   
-  Por isso usa o & safe navigate(navegação segura), ou seja,
-   Se user existe → chama update
-   Se user é nil → retorna nil (sem erro), avisa que não exite usuário
-    Se o usuário existir e a atualização der certo…”
+ A importância de obrigar o esta chave :user, tem relação com a convenção Ruby. Assim o Rails sabe que esses dados vão persistir em User(tabela user). Com isso evita dos dados irem para outra tabela.
+
+  Requisição vem através do navegador em params, então neste caso tem que vir 3 elementos: :user, :name e :active.
+  O require verifica se a :user existe(para que rails saiba onde vai persistir os dados).
+  Se não encontrar em params, interrompe tudo, não continua executando recurso na memória lança a exceção ActionController::ParameterMissing.
+  O foco de require é na estrutura de dados da requisição.
+
+
+ .permit(permitir/autorizar) é um método que só permite ou autoriza passar o que foi descrito dentro do parentese.
+  Nesse caso só passa [:name e :active]
+
+  Como no sistema estou recebendo dados enviado de outro sistema, e justamente esses dados vieram para persistirem no meu BD, o que poderia acontecer aqui é: um hacker mau intencionado, poderia interceptar a requisição e adicionar a este user o valor
+  user[admin]=true.
+  O Rails iria salvar esse valor, tornando este usuário um administrador. E este teria poderes para fazer muita coisa. Imagina o risco que o sistema tem com isso.
+    
+ Esse conjunto de ações de require e permit se chama: STRONG PARAMETERS(parâmetros fortes)
+
+                                 SEQUENCIA DO CÓDIGO
 
  O def update começa com o filtro procurando pelo id que esta no params
-  user = User.find_by(id: params[:id])
-  achando entra na variável user
+  user = User.find_by(id: params[:id]) achando entra na variável user
 
- Aqui if user&.update(user_params) é:
-   user existe?
-   Se existir → tenta atualizar com user_params
+ O próximo passo seria rodar o update, mas para o Ruby fazer isso ele precisa saber o que passaram para ele. Por isso ele salta para o método user_params
 
-   Aqui antes de entrar no if, vai no método private
-    params esta com os dados e lá tem os métodos: require e permite
-     Isso aqui é segurança 🔐
-     Chama-se Strong Parameters -> Parâmetros Fortes
-      
-     require -> método 
-     permite -> método
-   update retornou true?
-  Se sim → entra no if
-  update só retorna true se:
-  passou nas validações
-  salvou no banco
+ Nesse momento entra em ação o strong parameter.
 
+ Depois disso o código segue para o if pra a atualização
+   E antes da atualização acontecer, o &(safe navigation), atua no BD verificando se o :user é nill.
+   Caso o :user seja nill, sem não tiver o & safe no código, é natural do BD, enviar mensagem de erro: NoMethodError e isso é do BD e não do Rails como antes.
+     
+    Então perceba que Rails pode mandar mensagem de erro e para tudo, assim também é o BD.
+    E quando falo de parar tudo é um erro explosivo, como se fosse um grito: "PARE!" e não continua o código, indo para o else.
 
-
-   private
-
-  def user_params
-    params.require(:user).permit(:name, :active)
-  end
+  O foco do & safe navigator é evitar esse erro gerado do BD, não permitindo a continuidade do código.
+    Ele verifica se dos dados que estão, retornados de user_params, o :user não é nill.
+  
+   Se for, o & safe interrompe o erro natural do BD, evitando o grito, não permite a atualização, e o fluxo vai para o else retornando resposta para a API.
+     
+     Exemplo: user&.update — Se o usuário existir no banco, atualize.
+      Controller chama o model, Model valida e salva e Controller responde
+  
+     Agora se for nulo, apenas ignore e não quebre o sistema.
+   &. é o "Desvie" (Silencioso): Ele é diplomático. Se o usuário for nil, ele transforma a chamada do método em nil também. Isso faz o if falhar e "escorregar" para o else. O processo continua rodando e você consegue entregar uma resposta personalizada ao JSON de erro.
+    Perceba que o &(safe navigation) atua no BD, enquanto o strong parameter atua nos dados que vem do navegador.
+ 
+ Controller cuida da "burocracia" da entrada e o Model cuida da "verdade" dos dados.
+  
+  
 =end
 
