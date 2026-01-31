@@ -843,7 +843,7 @@ Abaixo esta o código de resposta da minha API para o Javascript
  nesta requisição tem o protocolo HTTP + URI + o Recurso desejado que é o users/5
  
  Como o Get é users/id, ou seja, um id especifico
- método show di-acordo com padrão REST
+ método show de-acordo com padrão REST
    GET	 + /users/:id	 ->  método show em controller
  
   Show significa mostrar, então essa função vai mostrar para a requisição
@@ -866,7 +866,7 @@ Abaixo esta o código de resposta da minha API para o Javascript
  se não, o que vai devolver é a mensagem que o método error produziu
 
   RESUMO:
-  O método show é um endpoit REST que responde a uma requisição GET
+  O método show é um endpoint REST que responde a uma requisição GET
   feita por outro sistema, retornando um recurso especifico.
   saiu do meu sistema, vai para outro em formato JSON
 =end
@@ -1221,8 +1221,33 @@ end
    &. é o "Desvie" (Silencioso): Ele é diplomático. Se o usuário for nil, ele transforma a chamada do método em nil também. Isso faz o if falhar e "escorregar" para o else. O processo continua rodando e você consegue entregar uma resposta personalizada ao JSON de erro.
     Perceba que o &(safe navigation) atua no BD, enquanto o strong parameter atua nos dados que vem do navegador.
  
- Controller cuida da "burocracia" da entrada e o Model cuida da "verdade" dos dados.
-  
-  
+ Controller cuida da "burocracia" da entrada e o Model cuida da "verdade" dos dados.  
 =end
 
+#                                  Endpoint DELETE
+
+=begin
+ Este endpoint significa apagar, ou seja, apaga um objeto user inteiro.
+ Remove o recurso do sistema
+ 
+ Digamos que na requisição venha DELETE/Users/5
+  isso significa: “por favor, apague o usuário de id 5”
+=end
+
+# Exemplo Javascript
+fetch("http://localhost:3000/users/5", {
+  method: "DELETE"
+})
+.then(response => {
+  if (response.status === 204) {
+    console.log("Usuário removido com sucesso")
+  }
+})
+
+=begin
+ A Api do java script esta trazendo para o meu sistema uma requisição que tem:
+  
+  "http://localhost:3000/users/5" -> URL (URL (Uniform Resource Locator)
+  Localizador Uniforme do recurso
+
+=end
