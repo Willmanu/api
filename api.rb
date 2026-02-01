@@ -1,7 +1,13 @@
-# A proposta aqui é estudar lógica ruby para APIs
-# APIs Application Programming Interface ( Interface de Programação de Aplicações)
-
+# A proposta aqui é estudar lógica ruby para API
 =begin
+API é a porta de entrada do sistema.
+API Application Programming Interface ( Interface de Programação de Aplicações)
+
+Uma API deve ser usada sempre que algo, externo, ao contexto interno, da sua aplicação, precisa solicitar uma ação ou um dado de forma padronizada.
+  
+Se existe fronteira, usa API.
+Se não existe fronteira, é regra de negócio.
+
 Mas antes -> definir as estruturas de código para ferramentas
 de manipulação para API
 
@@ -737,7 +743,6 @@ O Rails interpreta assim:
 
                         Construção de endpoints reais
 
- Serão construindo 3 endpoints aqui
  1 exemplo
  Get/users/5
  Digamos que meu sistema esta rodando em:http://localhost:3000
@@ -796,7 +801,7 @@ O Rails interpreta assim:
  Como tudo isso http://localhost:3000/users/5 na internet se acha meu RECURSO
 =end
 
-#                         1º endpoint show
+#                        ENDPOINT SHOW
 # Sistema de fora pedindo dados para minha API
 fetch("http://localhost:3000/users/5")
   .then(response => response.json())
@@ -871,7 +876,7 @@ Abaixo esta o código de resposta da minha API para o Javascript
   saiu do meu sistema, vai para outro em formato JSON
 =end
 
-#                           2º endpoint post
+#                           ENDPOINT POST
 # Sistema de fora enviando dados para se criar recurso para meu
 =begin
  Outro sistema envia dados
@@ -940,8 +945,6 @@ fetch("http://localhost:3000/users", {
   e assim construir esse recurso no meu BD
 =end
 
-#                            ENDPOINT POST
-
 class UsersController < ApplicationController
   def create
     user = User.new(
@@ -988,7 +991,7 @@ end
 
 =end
 
-#                      Proximo endpoint é o PUT
+#                           ENDPOINT PUT
 
 =begin
  PUT = atualizar/substituir
@@ -1156,6 +1159,7 @@ end
 
 =begin
  No código temos elementos novos:
+
  & -> que parece um operador logico, chama-se safe(seguro)navigate operator
  Em português: operador de navegação segura
  Ele chama o método(user_params) só se existir user no BD
@@ -1224,17 +1228,25 @@ end
  Controller cuida da "burocracia" da entrada e o Model cuida da "verdade" dos dados.  
 =end
 
-#                                  Endpoint DELETE
+#                                ENDPOINT DELETE
 
 =begin
- Este endpoint significa apagar, ou seja, apaga um objeto user inteiro.
- Remove o recurso do sistema
+ DELETE significa apagar ou remover.
+ Em tecnologia DELETE = tirar da existência visível
+ Apagar não significava destruir o material, e sim retirar o conteúdo visível.
+  Quando você “deleta” um arquivo:
+   O arquivo some da lista
+   Mas os dados podem continuar no disco
+   Até serem sobrescritos
+
+ Este endpoint serve não deixar um recurso visível.
+ O DELETE chama o método da action destroy.
  
  Digamos que na requisição venha DELETE/Users/5
   isso significa: “por favor, apague o usuário de id 5”
 =end
 
-# Exemplo Javascript
+# Exemplo: requisição através do Javascript
 fetch("http://localhost:3000/users/5", {
   method: "DELETE"
 })
@@ -1245,9 +1257,118 @@ fetch("http://localhost:3000/users/5", {
 })
 
 =begin
- A Api do java script esta trazendo para o meu sistema uma requisição que tem:
+ A Api do javascript através da URL esta trazendo uma requisição sobre o recurso user/5.
+   
+ Isso: method: "DELETE" define a intenção do que fazer com o recurso na URL
+   
+ Ou seja, esta pedindo para que o recurso, user/5 seja tirado de vista(delete -> apagado ou removido)
+ 
+ Esse trecho abaixo
   
-  "http://localhost:3000/users/5" -> URL (URL (Uniform Resource Locator)
-  Localizador Uniforme do recurso
+ .then(response => {
+   if (response.status === 204) {
+     console.log("Usuário removido com sucesso")
 
+ é um método devolve a resposta 
+  Temos uma condicional (if) que responde o desfecho sobre o recurso.
+
+
+ Quando recebida está requisição pelo Rails, o mesmo procura o Controller que tem o método ou action destroy
 =end
+
+class UsersController < ApplicationController
+  def destroy
+    user = User.find_by( id: params[:id])
+
+    if user&.destroy
+      head :no_content
+    else
+      render json: { error: "User not found" }, status: :not_found
+    end
+  end
+end
+
+=begin
+ params está com a requisição
+
+ A variável user esta recebendo o filtro feito pelo find_by
+
+ Agora temos o if:se user&.destroy
+  & safe navigate operator -> operador de navegação segura, examina o resultado do filtro porque?:
+    se o filtro não encontrar o id, será lançado uma mensagem de erro, e interrompe todo o fluxo do código. 
+    
+    Para que o fluxo continue o safe não deixa isso acontecer, joga o fluxo para o else que exibe o error.
+
+  Se achar o id, então o método .destroy entra em ação:
+    Remove o registro do banco
+    Executa callbacks (retornos de chamadas) -> (before_destroy, after_destroy)
+    Diferente de delete, destroy entra no (mais baixo nível) faz o recurso deixar de existir de verdade no banco.
+  Isso acontecendo, o método head entra em ação:
+
+                                  head no_content
+                  
+   head é um método do controller Rails que:
+   envia apenas o header(cabeçalho) da resposta HTTP sem corpo (body)
+     ou seja:
+      não envia json, texto e objeto.
+      envia somente o status HTPP.
+    
+  Os status HTPP são composto por números.
+  os mais comuns são os números:
+  200, 201, 204 e 404
+
+  O Verbo DELETE destrói  o recurso. Isso significa que ele não existe mais.
+  Se ele não existe, não faz sentido devolver JSON, já que uma das ideias através dele é devolver recurso, construindo um body(corpo) para o JSON.
+
+  O método head do Controller Rails tem junto a ele símbolos:
+  :ok, :created, :no_content, :not_found que representa esses números do HTPP.
+    São hash internos do Rails
+      HTTP_STATUS = {
+       ok: 200,
+       created: 201,
+       no_content: 204,
+       not_found: 404
+      }
+  Então para cada resposta do verbo DELETE temos no método head com os status HTPP. É só chamar um conforme a situação
+    Neste caso o escolhido foi no_content carregando o status 200   
+     head :no_content descreve:
+     “Requisição executada com sucesso, mas não tenho nada para te devolver”
+
+  Isso é convenção HTTP / REST aplicada no Rails, construindo este endpoint para API.
+
+  O que o cliente (JavaScript) recebe?
+=end
+fetch("/users/5", { method: "DELETE" })
+  .then(response => {
+    console.log(response.status) // 204
+  })
+
+=begin
+ response.status → 204
+ response.body → vazio
+ response.json() → ❌ erro (não tem corpo)
+
+ Por isso o frontend não tenta ler JSON após DELETE.
+ 
+ Comparação com render
+ Com render: -> render json: user
+ ✔ status
+ ✔ body
+ ✔ json
+ 
+ Com head: -> head :no_content
+ ✔ status
+ ❌ body
+
+ Aqui encerramos os endpoints
+ quando for get    ->  show ou index ete ultimo para quando for todo registro User
+            post   ->  create
+            put    ->  update
+            delete ->  destroy
+
+ GET esta vindo buscar recurso, então vou enviar mostrando show
+ POST está me enviando recurso , então vou cria-lo com CREATE
+ PUT está pedindo atualização do recurso, então vou usar UPDATE
+ DELETE está pedido para apagar ou remover recurso, vou usar DESTROY
+=end
+#                               ROTAS                            
