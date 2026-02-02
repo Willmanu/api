@@ -1370,5 +1370,135 @@ fetch("/users/5", { method: "DELETE" })
  POST está me enviando recurso , então vou cria-lo com CREATE
  PUT está pedindo atualização do recurso, então vou usar UPDATE
  DELETE está pedido para apagar ou remover recurso, vou usar DESTROY
+
+
+                                 ROTAS                            
+
+ Rotas são a porta de entrada da API
+ São regras que direcionam URL + Verbos HTTP ->'GET,POST,PUT, PATCH e DELETE'.
+ Elas dizem para qual Controller devem ir e qual action.
+
+ Rota = caminho da requisição -> ação que executa a regra de negócio
+ 
+ Antes de isso acontecer a requisição passa por uns processos:
+  Aqui temos o modelo de arquitetura web chamado cliente e servidor, que define o papel de quem inicia a conversa e solicita o recurso.
+   cliente é o que envia a requisição
+   servidor é o que recebe
+ 
+ Usando como exemplo verbo DELETE, vamos pensar no fluxo até o user ser apagado.
+  1- Cliente -> Navegador envia  a requisição DELETE com usuário id: 5.
+  2- Servidor web(Nginx) recebe e diz "Isso é para a aplicação Ruby, vou repassar".
+  3- Servidor de Aplicação(Puma) recebe do Nginx.
+  4- Camada Rack: Traduz o sinal para o Ruby
+  5- Ruby on Rails recebe o objeto pronto, olha as rotas, chama o UsersController#destroy e apaga do banco.
+				
+                                   IMPORTANTE!!!
+ Sem rotas:
+ o controller não é chamado
+ por mais que tenha criado o método, sem rota, este método não existe.
+ a API não responde
+ Onde ficam as rotas?
+ No arquivo-> config em routes.rb
+ 
+ Rotas é isso, define qual controller vai a requisição, qual ação tomar, baseado em cada verbo.
+ 
+                          O padrão REST (o que o mercado usa)
+ Em vez de escrever tudo na mão, o Rails oferece isso:
+  resources :users
+  Essa uma linha cria 7 rotas REST.
+  Exemplo:
+
+ Verbo	           Rotas        Controller#action	           Uso
+  GET	           users	      users#index	             listar
+
+  GET             user|new          new             Exibir formulário HTML de criação
+
+  POST	           |users	       users#create	         criar usuário no banco
+
+  GET	         users|:id         users#show	         busca usuário específico
+
+  GET         |users|:id|edit         edit           Exibir formulário HTML de edição
+
+  PATCH|PUT	    |users|:id         users#update	       atualizar usuário existente
+
+  DELETE	    |users|:id	       users#destroy	      remove usuário
+
+ 
+  O comando crias os 7 endpoints porém new e edit  só fazem sentido quando o Rails gera HTML 
+  Api não renderiza formulário, quem cuida disso é o front.
+  Por conta disso API usa somente 5 endpoint
+
+                             Por que Rails cria 7 se API usa 5?
+ Porque Rails nasceu como: Framework full-stack(HTML + Backend)
+  API veio depois.
+   Por isso:
+    new → formulário HTML
+	edite → formulário HTML
+
+  Este comando cria apenas o mapeamento de rotas
+  O comando fica assim
+  resources :users, only: [:index, :show, :create, :update, :destroy]
+   em config|routes.rb
+
+  Então esta comando diz o seguinte ao Rails:
+  Exemplo do DELETE como Rota:
+   “Se alguém chamar DELETE |users|:id
+    procure UsersController#destroy”
+
+ATENÇÂO!! “Se alguém chamar DELETE |users|:id procure UsersController#destroy” 
+
+
+                             PROCESSO MANUAL DO DELETE
+ 
+ Usando o Exemplo do DELETE
+  Um sistema externo quer apagar um usuário ID = 5
+  Abaixo temos a Requisição no JS
 =end
-#                               ROTAS                            
+
+fetch("http://localhost:3000/users/5", {
+  method: "DELETE"
+})
+=begin
+ Aqui temos:
+ Protocolo: HTTP
+ Verbo: DELETE
+ Recurso: /users/5
+ Esse sistema NÃO conhece Rails
+ Ele só conhece HTTP
+
+
+                                A ROTA (entrada do sistema)
+  Em config/routes.rb escrevemos rota para DELETE:
+=end
+ delete "/users/:id", to: "users#destroy"
+
+=begin
+ Com isso acima o Rails sabe que se chagar uma rota com verbo DELETE, a action será destroy
+ essa baixo
+ 
+ Em Controller fica:
+=end
+class UsersController < ApplicationController
+  def destroy
+	users = User.find_by(id: params[:id])
+
+    if users&.destroy
+	   head :no_content
+	else
+		render json: {error: "User not found" }, status:404
+    end		
+  end
+end
+
+=begin
+ Agora o proximo passo é fazer com que o MODEL fale com o BD
+
+ em models precisamos definir o arquivo user.rb com a classe
+=end
+ class User < ApplicationRecord
+ end
+
+ =begin
+   
+
+ =end
