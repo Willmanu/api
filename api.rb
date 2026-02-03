@@ -1,39 +1,46 @@
 # A proposta aqui é estudar lógica ruby para API
 =begin
 API é a porta de entrada do sistema.
-API Application Programming Interface ( Interface de Programação de Aplicações)
+
+Uma API funciona como um garçom ou um mensageiro entre dois programas
+Imagine que sua aplicação é uma mesa de restaurante e o outro sistema é a cozinha: você não entra na cozinha para pegar a comida; você faz o pedido ao garçom(API), que leva a informação e traz o prato pronto de volta
+
+Você deve usar uma API sempre que o seu sistema precisar pedir um favor (como uma informação ou uma tarefa) para outro sistema, garantindo que os dois se entendam sem precisar conhecer os segredos internos um do outro
+
+API->Essa sigla é Application Programming Interface ( Interface de Programação de Aplicações)
 
 Uma API deve ser usada sempre que algo, externo, ao contexto interno, da sua aplicação, precisa solicitar uma ação ou um dado de forma padronizada.
   
 Se existe fronteira, usa API.
 Se não existe fronteira, é regra de negócio.
 
-Mas antes -> definir as estruturas de código para ferramentas
-de manipulação para API
+Uma API tem um body(corpo) para enviar o pedido e para responder.
+Este corpo é formado por uma estrutura onde os dados se acomodam:
 
 Estruturas de dados usa → [] e {}
 [] para array
 {} para hash
 Blocos de código → {} ou do...end
-	não é uma regra para seguir a risca
+	abaixo não é uma regra para seguir a risca
  {} usa-se em blocos curtos de uma linha
-  do ...end use-se bloco mais de uma linha
+  do ...end use-se em bloco mais de uma linha
 	porém tanto faz, fazem a mesma coisa
 =end
 
-# Entrada de dados para manipulação
+# Entrada de dados para manipulação no terminal usando o IRB
 users = [
   { id: 1, name: 'William', active: true },
   { id: 2, name: 'Ana', active: false }
 ]
 
 =begin
+ o código acima foi feito para inserir dados ao sistema e fazer os testes de manipulação.
+ isso é um array -> user[]
+ dentro é hash{} com os dados: id, name e active o que em hash, são chamados de chaves.
 
- isso é um array user[]
- dentro é hash{} id, name, active são chaves
- a variável users esta recebendo um array com dois blocos de dados hash com suas chaves e valores
- quando escrevo isso
- users[0]
+ A variável users, esta recebendo um array, com dois blocos de dados hash, com suas chaves e valores.
+ 
+ Após os dados serem inseridos, quando escrevo isso -> users[0]
 
  o retorno é o bloco de dados hash de chave id 1 com todos os valores
    {id: 1, name: "William", active: true}
@@ -47,41 +54,52 @@ users = [
  porque estou acessando o item 0 do array, e pedindo para trazer a chave name: do hash, que tem o valor mostrado
 
                            Array
-O array foi criado para lhe dar com ordem e desempenho bruto em sequência.
+ O array foi criado para lhe-dar com ordem e desempenho bruto em sequência.
+ 
+ Ordem Garantida:
+ Se você precisa que o "Item A" venha antes do "Item B" (como em uma fila ou
+ lista de reprodução), o array é a escolha natural.
+ 
+ Eficiência de Memória:
+ Arrays armazenam dados de forma contígua (um ao lado do outro na memória),
+ o que é muito mais "barato" para o computador processar em massa.
+ 
+ Acesso Matemático:
+ Se você quer o 10º item, o computador calcula o endereço exato instantaneamente.
+ Em um Hash, ele precisaria processar uma 'chave' antes.
+ 
+ 
+                               Hash
+ HASH -> significa picar
+ A ideia vem de uma função interna do Ruby, que pica um senha por exemplo e a espalha. Isso protege sua senha; o sistema guarda o Hash, ou seja, cada pedaço em tamanhos iguais, espalhados, e não a senha real.
+ E quando acionada, o sistema sabe exatamente onde cada pedaço está, para junta-las.
+ 
+ A ideia fora disso explicado acima, é:
+ User -> é um objeto, possui nome, endereço, cpf, rg, id etc. Tudo isso junto forma esse objeto User.
+ Essas informações do User são quebradas e guardadas em chaves. A chave é como se fosse uma etiqueta.
+  Exemplo: cpf -> fica cpf: e dentro fica o cpf do User.
+ Então quando preciso de uma informação chamo a chave especifica, o hash vai direto nesta etiqueta -> chave.
+ 
+ Então este Hash é isso, quebra o objeto em pedaço, e quando precisa de um informação dele, chama especificamente por essa chave
 
-Ordem Garantida:
-Se você precisa que o "Item A" venha antes do "Item B" (como em uma fila ou
-lista de reprodução), o array é a escolha natural.
+ O Hash foi criado para lidar com significados e buscas rápidas por nome.
+ É impossível decorar que o CPF de um usuário está no "índice 452" de um array.
 
-Eficiência de Memória:
-Arrays armazenam dados de forma contígua (um ao lado do outro na memória),
-o que é muito mais "barato" para o computador processar em massa.
-
-Acesso Matemático:
-Se você quer o 10º item, o computador calcula o endereço exato instantaneamente.
-Em um Hash, ele precisaria processar uma 'chave' antes.
-
-
-                              Hash
-O Hash (Dicionário/Objeto) foi criado para lidar com significado
-e buscas rápidas por nome
-
-Busca por Etiqueta (Mnemônica):
-É impossível decorar que o CPF de um usuário está no "índice 452"
-de um array.
-No Hash, você simplesmente pede pela chave "cpf".
-
-Velocidade em Grandes Dados
-Para achar um nome em um Array de 1 milhão de itens, você teria
-que percorrer item por item (lento).
-No Hash, a busca é praticamente instantânea, não importa o tamanho da lista.
-
-Dados Esparsos:
-Se você quer guardar apenas a informação dos anos "1900" e "2026",
-um array precisaria de 2026 espaços (muitos vazios).
-Um Hash guarda apenas as duas chaves necessárias.
+ No Hash, você simplesmente pede pela chave "cpf".
+ 
+                      HASH-> Velocidade em Grandes Dados:
+ Para achar um nome em um Array de 1 milhão de itens, você teria
+ que percorrer item por item (lento).
+ No Hash, a busca é praticamente instantânea, não importa o tamanho da lista.
+ 
+                      Dados Esparsos:
+ No contexto geral, esparsos significa algo que está espalhado, distribuído com grandes intervalos ou que existe em pouca quantidade em um determinado espaço
+ Se você quer guardar apenas a informação dos anos "1900" e "2026",
+ um array precisaria de 2026 espaços (muitos vazios).
+ Um Hash guarda apenas as duas chaves necessárias.
 =end
 
+# Usando os dados que inseri anteriormente no IRB.
 # selecionando um item do hash com uma variável seguindo uma condição
 
 users.select { |u| u[:active] == true } # bloco curto usando {}
@@ -174,10 +192,10 @@ users.map do |u| { id: u[:id], name: u[:name] } end
  # MAP → transformação
  users.map { |u| u[:name] }
  
- Método	        Bloco retorna   	     Resultado
- each	        qualquer coisa	          ignora
- select	     true / false	       filtrado só true e faz um novo array
- map	         qualquer valor	         transforma em array
+ Método	             Bloco retorna         	     Resultado
+ each	             qualquer coisa	                ignora
+ select	          true / false	             filtrado só true e faz um novo array
+ map	              qualquer valor	               transforma em array
  
  Regra de ouro (guarde isso)
  
@@ -264,9 +282,9 @@ users.map { |u| u[:name]}.select { |name| name.start_with?("A") }
   preferível o encadeamento
 =end
 
-# JSON (JavaScript Object Notation (Notação de Objetos JavaScript)
-
+#                                   JSON
 =begin
+ JSON (JavaScript Object Notation (Notação de Objetos JavaScript)
  É um formato leve de intercâmbio(troca entre) de dados,
  fácil de ler e escrever para seres humanos e simples de
  processar para máquinas
@@ -314,7 +332,7 @@ active_users = users.select { |u| u[:active] }
 
 =begin
   Nesta caso a variável active_users recebe os dados do select
-  que o bloco trouxa a ele, porém somente os de chave :active == true
+  que o bloco trouxe a ele, porém somente os de chave :active == true
   Retorno active_users = u-> [{ id: 1, name: 'William', active: true },
              { id: 3, name: 'Alice', active: true }]
 =end
@@ -326,7 +344,7 @@ response = active_users.map { |u| { name: u[:name] } }
  Nesta a variável response(resposta) vai receber o array pronto para JSON
  
  a variável active_users contém um array, com hashs, somente com com
- haves :active == true que foram filtradas acima
+ chaves :active == true que foram filtradas acima
  Dentro do bloco a chave name: atua como uma variável, porque
  vai receber uma string de u[:name]
  Perceba que name:, chave para hash, recebe a string da chave :name
@@ -730,9 +748,9 @@ end
 =begin
 Quando acontece isso acima
 O Rails interpreta assim:
- Verbo: Get
- Recurso: coleção(Tabela users, sem ID)
- Action(ação) Rest padrão: index
+ Verbo: Get -> pegar para ler
+ Recurso: é o User -> Tabela com usuários
+ Action(ação) -> Rest padrão: index
 
  A pergunta para: Por que GET pode ser index OU show?
  é essa acima
@@ -877,7 +895,7 @@ Abaixo esta o código de resposta da minha API para o Javascript
 =end
 
 #                           ENDPOINT POST
-# Sistema de fora enviando dados para se criar recurso para meu
+# Sistema de fora enviando dados para que seja criado recurso dentro meu sistema
 =begin
  Outro sistema envia dados
  meu sistema recebe
@@ -961,13 +979,16 @@ end
 =begin
  Acima temos o endpoint rails para receber os dados
 
- user é a variável que está recebendo os o User.New, ou seja,
- novo objeto usuário
- chave name: recebendo o nome deste novo usuário pelo
- params através de sua chave :name
+ user é a variável que está recebendo o novo usuário.
+ User.New é o comando para criar um novo usuário.
+ chave name: recebendo o nome deste novo usuário, que esta sendo carregado pelo params 
+ [:name] isso é a chave que esta dentro do params, que vai depositar em name:
  o mesmo acontece com active
 
- se existir e for salvo no BD esse novo user, o render devolve status 201
+ A condicional if else.
+   user.save é o comando para salvar no BD
+    quando adiciona a condicional -> if user.save -> fica assim:
+     se existir e for salvo no BD esse novo user, o render devolve status 201
    se não, devolve error e status 422
 
  Na maioria das vezes o model valida a entrada do dados e confirma ao controller
@@ -1169,6 +1190,8 @@ end
 
 
  Antes do código retornar com a resposta para o controller, ele precisa fazer a atualização.
+   Antes da fazer a atualização temos um método privado que verifica se as informações do params são de fato verdadeiras e seguras.
+
  Olhando para o método privado, no fim dessa estrutura de código, temos o params que carrega em si os dados vindo de fora para atualização.
  Na frente do params temos 2 métodos: require e permit que atuam nos dados que vem de fora.
  
@@ -1213,8 +1236,8 @@ end
     Então perceba que Rails pode mandar mensagem de erro e para tudo, assim também é o BD.
     E quando falo de parar tudo é um erro explosivo, como se fosse um grito: "PARE!" e não continua o código, indo para o else.
 
-  O foco do & safe navigator é evitar esse erro gerado do BD, não permitindo a continuidade do código.
-    Ele verifica se dos dados que estão, retornados de user_params, o :user não é nill.
+   O foco do & safe navigator é evitar esse erro gerado do BD, não permitindo a continuidade do código.
+     Ele verifica se dos dados que estão, retornados de user_params, o :user não é nill.
   
    Se for, o & safe interrompe o erro natural do BD, evitando o grito, não permite a atualização, e o fluxo vai para o else retornando resposta para a API.
      
@@ -1259,19 +1282,17 @@ fetch("http://localhost:3000/users/5", {
 =begin
  A Api do javascript através da URL esta trazendo uma requisição sobre o recurso user/5.
    
- Isso: method: "DELETE" define a intenção do que fazer com o recurso na URL
+ Isso-> method: "DELETE", define a intenção do que fazer com o recurso na URL
    
  Ou seja, esta pedindo para que o recurso, user/5 seja tirado de vista(delete -> apagado ou removido)
  
  Esse trecho abaixo
-  
  .then(response => {
    if (response.status === 204) {
      console.log("Usuário removido com sucesso")
 
  é um método devolve a resposta 
   Temos uma condicional (if) que responde o desfecho sobre o recurso.
-
 
  Quando recebida está requisição pelo Rails, o mesmo procura o Controller que tem o método ou action destroy
 =end
@@ -1405,13 +1426,13 @@ fetch("/users/5", { method: "DELETE" })
                           O padrão REST (o que o mercado usa)
  Em vez de escrever tudo na mão, o Rails oferece isso:
   resources :users
-  Essa uma linha cria 7 rotas REST.
+  Esse comando acima, cria 7 rotas REST.
   Exemplo:
 
- Verbo	           Rotas        Controller#action	           Uso
-  GET	           users	      users#index	             listar
+ Verbo	              Rotas        Controller#action	           Uso
+  GET	             users	         users#index	             listar
 
-  GET             user|new          new             Exibir formulário HTML de criação
+  GET             user|new              new          Exibir formulário HTML de criação
 
   POST	           |users	       users#create	         criar usuário no banco
 
@@ -1424,9 +1445,9 @@ fetch("/users/5", { method: "DELETE" })
   DELETE	    |users|:id	       users#destroy	      remove usuário
 
  
-  O comando crias os 7 endpoints porém new e edit  só fazem sentido quando o Rails gera HTML 
+  O comando crias os 7 rotas porém new e edit  só fazem sentido quando o Rails gera HTML 
   Api não renderiza formulário, quem cuida disso é o front.
-  Por conta disso API usa somente 5 endpoint
+  Por conta disso API usa somente 5 rotas
 
                              Por que Rails cria 7 se API usa 5?
  Porque Rails nasceu como: Framework full-stack(HTML + Backend)
