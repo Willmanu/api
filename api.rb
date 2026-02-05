@@ -1585,7 +1585,7 @@ end
      
     Se não encontrar, o Model devolve nil (nada).
     
-    Caso não exista, seria emitado uma mensagem de erro, e interromperia todo o programa. O & safe esta ali para não deixar isso acontecer, e fazer com que o código siga para o else.
+    Caso não exista, seria enviado uma mensagem de erro, e interromperia todo o programa. O & safe esta ali para não deixar isso acontecer, e fazer com que o código siga para o else.
 
      Existindo, executara o destroy
 
@@ -1596,3 +1596,58 @@ end
 =end
 
 #                   Validações no Model + Retorno de arro de API
+
+=begin
+ Ideia Central(Antes do Código)
+ CONTROLLER = Cuida da burocracia da requisição
+ MODEL = Cuida da Verdade doss Dados
+  
+ Ou seja
+  Controller recebe
+  Model decide se pode ou não salvar
+
+              MODEL: O Guardião da Verdade (Onde moram as validações)
+ O Model é quem diz: "Eu não aceito um usuário sem e-mail" ou "A senha precisa ter 6 dígitos".
+ Ele não sabe o que é um navegador, um celular ou um JSON.
+ Ele só se preocupa se o dado é puro e correto antes de entrar no banco de dados.
+ Isso é Active Record Validations.
+ 
+                   CONTROLLER: O Diplomata (Cuida da Burocracia)
+ O Controller recebe a "fofoca"(os parâmetros) da internet e pergunta ao Model se aquilo é verdade.
+ A burocracia dele é: "Se o Model disse que é verdade, eu respondo 201 Created.
+ Se o Model disse que é mentira, eu pego a lista de erros que ele gerou e transformo em um JSON
+ para o usuário ler".
+ Isso é Action Controller Overview(Visão Geral).
+  
+                          Onde ficam as validações?
+ Sempre ficam no Model.
+=end
+# app/models/user.rb
+class User < applicationRecord
+end
+
+=begin
+ Estamos falando de dados que vão persistir ou serem filtrados do BD
+ Então é aqui que o Rails espera:
+  regras
+  limites
+  consistência dos dados
+
+ Primeira validação básica
+  Exemplo: nome obrigatório
+=end
+class User <applicationRecord
+  validates :name, presence: true
+end
+=begin
+ Em português:
+  Um User só é válido se tiver name.
+
+  Quando o Controller chama:
+   user.save
+ 
+ O Rails faz automaticamente:
+  roda todas as validações
+  se alguma falhar → não salva
+  guarda os erros em user.errors
+=end
