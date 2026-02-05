@@ -1397,9 +1397,9 @@ fetch("/users/5", { method: "DELETE" })
 
  Rotas são a porta de entrada da API
  São regras que direcionam URL + Verbos HTTP ->'GET,POST,PUT, PATCH e DELETE'.
- Elas dizem para qual Controller devem ir e qual action.
+ Elas dizem para qual Controller devem ir e qual action deve agir.
 
- Rota = caminho da requisição -> ação que executa a regra de negócio
+ Rota = caminho da requisição -> ação que executa a regra de negócio -> retorno -> resposta
  
  Antes de isso acontecer a requisição passa por uns processos:
   Aqui temos o modelo de arquitetura web chamado cliente e servidor, que define o papel de quem inicia a conversa e solicita o recurso.
@@ -1412,21 +1412,25 @@ fetch("/users/5", { method: "DELETE" })
   3- Servidor de Aplicação(Puma) recebe do Nginx.
   4- Camada Rack: Traduz o sinal para o Ruby
   5- Ruby on Rails recebe o objeto pronto, olha as rotas, chama o UsersController#destroy e apaga do banco.
+    
+  Perceba que a primeira coisa que o Rails faz é olhar a rota.
 				
                                    IMPORTANTE!!!
  Sem rotas:
- o controller não é chamado
- por mais que tenha criado o método, sem rota, este método não existe.
- a API não responde
+  o controller não é chamado
+  por mais que tenha criado o método, sem rota, este método não existe.
+  a API não responde
  Onde ficam as rotas?
- No arquivo-> config em routes.rb
+  No arquivo-> config em routes.rb
  
- Rotas é isso, define qual controller vai a requisição, qual ação tomar, baseado em cada verbo.
+ Rotas é isso, define para qual controller vai a requisição, qual ação tomar, baseado em cada verbo.
  
                           O padrão REST (o que o mercado usa)
- Em vez de escrever tudo na mão, o Rails oferece isso:
+ Em vez de escrever todas as rotas a mão, o Rails oferece um método para isso:
   resources :users
-  Esse comando acima, cria 7 rotas REST.
+ Acima esta dizendo: rotas para o recurso users
+
+  Esse comando cria 7 rotas REST.
   Exemplo:
 
  Verbo	              Rotas        Controller#action	           Uso
@@ -1444,6 +1448,16 @@ fetch("/users/5", { method: "DELETE" })
 
   DELETE	    |users|:id	       users#destroy	      remove usuário
 
+ Elas ficam escritas em config|routes exatamente assim:
+
+ get    "|users",          to: "users#index"
+ post   "|users",          to: "users#create"
+ get    "|users|:id",      to: "users#show"
+ patch  "|users|:id",      to: "users#update"
+ put    "|users|:id",      to: "users#update"
+ delete "|users|:id",      to: "users#destroy"
+ get    "|users|new",      to: "users#new"
+ get    "|users|:id|edit", to: "users#edit"
  
   O comando crias os 7 rotas porém new e edit  só fazem sentido quando o Rails gera HTML 
   Api não renderiza formulário, quem cuida disso é o front.
@@ -1454,19 +1468,38 @@ fetch("/users/5", { method: "DELETE" })
   API veio depois.
    Por isso:
     new → formulário HTML
-	edite → formulário HTML
+	  edite → formulário HTML
 
-  Este comando cria apenas o mapeamento de rotas
-  O comando fica assim
-  resources :users, only: [:index, :show, :create, :update, :destroy]
-   em config|routes.rb
+ Uma API não entrega o formulário (o visual), ela entrega apenas os dados (JSON). Quem desenha o formulário é o Front-end (React, Vue, Mobile).
+ No Rails tradicional (MVC): Você acessa |usuarios|new (GET) para ver o formulário. Quando você clica em "Enviar", os dados são enviados para a rota de criação (POST |usuarios)
+  
+  Para ficar bem claro, veja como o resource mapeia isso no Rails:
+  Verbo 	     Rota (URL)   Ação no Controller	          Objetivo
+  GET	      |usuarios|new      	new	            Apenas mostrar o formulário em branco.
+  POST    	|usuarios	         create	          Aqui sim: Salvar os dados no banco de dados.
 
-  Então esta comando diz o seguinte ao Rails:
-  Exemplo do DELETE como Rota:
-   “Se alguém chamar DELETE |users|:id
-    procure UsersController#destroy”
+                          OPÇÃO DE RESTRIÇÂO :only ou :except
+   O método resource tem duas chaves hash de opções, ou seja, chaves que passadas indica qual rotas quer que não crie e quais devem ser criadas:
+    :only e :except chamadas tecnicamente de opção de restrição.
+    Elas funcionam como filtro, quando usadas quebram o padrão Rails
+    Ele diz ao roteador do Rails: "Não use o comportamento padrão de criar tudo; crie apenas o que eu listar aqui"
+   exemplo:
+   resources :users, only: [:index, :show, :create, :update, :destroy]
 
-ATENÇÂO!! “Se alguém chamar DELETE |users|:id procure UsersController#destroy” 
+   ou
+   
+   resources :users, except: [:new, :edit]
+  Ao usar o except: [:new, :edit], você está dizendo ao Rails: "Crie o pacote padrão de rotas, MAS deixe de fora essas duas"
+
+ Para ver as rotas, no terminal escreve-se -> rails routes
+  o que se vê é algo do tipo:
+    
+  GET            |users                users#index
+  GET            |users|:id            users#show
+  POST           |users                users#create
+  PATCH          |users|:id            users#update
+  DELETE         |users|:id            users#destroy
+
 
 
                              PROCESSO MANUAL DO DELETE
@@ -1489,15 +1522,22 @@ fetch("http://localhost:3000/users/5", {
 
 
                                 A ROTA (entrada do sistema)
+
+  Como vimos a primeira coisa que acontece é o Rails procurar a rota. Então precisamos criar essa rota baseado no verbo.
   Em config/routes.rb escrevemos rota para DELETE:
 =end
  delete "/users/:id", to: "users#destroy"
 
 =begin
- Com isso acima o Rails sabe que se chagar uma rota com verbo DELETE, a action será destroy
- essa baixo
- 
- Em Controller fica:
+  delete quando o Rails ve isso ele sabe que a rota é para deletar
+
+  "|user|:id" este é o recurso que quero manipular
+
+  to: é o direcionador da rota. Ele define o destino final da requisição dentro do código Ruby on Rails
+    
+  "users#destroy" aqui users é o user_controller, ou seja, o controlador chamado users. E destroy é o método que está dentro do controller, que vai resolver a requisição e retornar a resposta. 
+  
+  Após isso o Rails monta o params e o código segue para o destroy em Controller:
 =end
 class UsersController < ApplicationController
   def destroy
@@ -1512,14 +1552,47 @@ class UsersController < ApplicationController
 end
 
 =begin
- Agora o proximo passo é fazer com que o MODEL fale com o BD
+ Aqui acontece:
+ 
+ params[:id] → veio da URL /users/5
+ 
+ find_by → busca no banco
+ 
+ destroy → apaga no BD
+ 
+ head :no_content → resposta REST correta para DELETE
 
- em models precisamos definir o arquivo user.rb com a classe
+ Agora o proximo passo é fazer com que o MODEL fale com o BD
+ em models precisamos definir o arquivo user.rb 
 =end
  class User < ApplicationRecord
  end
 
- =begin
+=begin
+  Aqui applicationRecord é uma classe que herda de ActiveRecord::Base
+  ActiveRecord::Base é o chefão, que vem dentro da Gem do Rails. Ele tem o superpoderes(Salva, Deleta, Busca etc.)
+    
+  No Rails se cria uma classe intermediária(ApplicationRecord) para que, se um dia,quiser criar uma funcionalidade que todos os models tenham, escreve-se nela, em vez de mexer direto no código interno do Rails.
+    
+  Mesmo sem escrever nada, o Rails já sabe o que fazer
+  Quando se chama User.find_by no controller, o Ruby olha aqui e ve se tem essa herança.
+  Tendo o controller, da uma ordem ao model:
+   "Ei, classe User (Model), procure no banco de dados alguém com esse ID que recebi da rota."
+    
+   Model (User < ApplicationRecord): Ele entende que deve olhar na tabela users e gera automaticamente um comando SQL: SELECT * FROM users WHERE id = ? LIMIT 1.
    
+   Se encontrar, o Model "empacota" os dados do banco em um objeto Ruby e entrega para a sua variável users.
+     
+    Se não encontrar, o Model devolve nil (nada).
+    
+    Caso não exista, seria emitado uma mensagem de erro, e interromperia todo o programa. O & safe esta ali para não deixar isso acontecer, e fazer com que o código siga para o else.
 
- =end
+     Existindo, executara o destroy
+
+     O controller: "Usuário encontrado, agora apague-se!"
+      Model: O Model executa o comando SQL DELETE FROM users WHERE id = ?. Ele também verifica se existem regras (validations ou callbacks) antes de apagar.
+      
+      Se o Model apagou com sucesso: Ele retorna true. O Controller então executa o head :no_content, que envia para o Nginx (e depois para o usuário) o código HTTP 204, dizendo: "Feito! Não tenho mais nada para te mostrar porque o recurso sumiu".
+=end
+
+#                   Validações no Model + Retorno de arro de API
