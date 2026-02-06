@@ -1562,8 +1562,11 @@ end
  
  head :no_content → resposta REST correta para DELETE
 
+ Como aqui estamos falando de mudar algo no BD, precisamos criar esta conversa
+ O controller não faz nada no BD, ele somente passa o comando para ele -> destroy
+ Ele recebe a requisição analisa para onde vai
  Agora o proximo passo é fazer com que o MODEL fale com o BD
- em models precisamos definir o arquivo user.rb 
+ em models precisamos definir o arquivo user.rb com:
 =end
  class User < ApplicationRecord
  end
@@ -1593,14 +1596,41 @@ end
       Model: O Model executa o comando SQL DELETE FROM users WHERE id = ?. Ele também verifica se existem regras (validations ou callbacks) antes de apagar.
       
       Se o Model apagou com sucesso: Ele retorna true. O Controller então executa o head :no_content, que envia para o Nginx (e depois para o usuário) o código HTTP 204, dizendo: "Feito! Não tenho mais nada para te mostrar porque o recurso sumiu".
+
+	                                    RESUMO
+ A requisição é feita pelo front, que envia para o servidor web
+ O servidor web percebe que a requisição é para Ruby, e envia para o Puma(Servidor)
+ O puma por sua vez a entrega para o Rails
+ Rails leva ao controller e este verifica para qual endpoint vai
+ No endpoint tem a logica para tratar os dados da requisição, neste caso do delete, o controller atua novamente enviando a ordem para o model
+ O model recebe a ordem e retorna para o controller com a resposta
+ E o processo acontece ao inverso de como veio até chegar ao front que envio a requisição.
 =end
 
-#                   Validações no Model + Retorno de arro de API
+#                   Validações no Model + Retorno de erro de API
 
 =begin
+ IMPORTANTE!!!!!
+  As validações acontecem sempre que tentamos persistir(salvar) dados no BD
+  Isso acontece nos dois principais momentos do ciclo de vida de um registro:
+
+   Criação (POST): Quando você usa o comando .save ou .create para um objeto novo.
+   Atualização (PUT/PATCH): Quando você altera um usuário que já existe e tenta salvar as mudanças com .update ou .save
+    Métodos que "disparam" as validações:
+     .save
+     .create
+     .update
+
+
+ As validações de Model e os retornos de erro são as duas metades de uma mesma conversa: o Model decide o que é certo, e o Controller comunica o que deu errado.
+
+ Validação é a camada de segurança, que impede que dados "sujos" ou incompletos entrem no banco de dados. No Rails, usamos o Active Record Validations.
+
+ Erro em API é: a tradução técnica da falha do Model para uma linguagem que o Front-end (React, Vue, Mobile) entenda, geralmente em JSON acompanhado de um Status Code HTTP
+			
  Ideia Central(Antes do Código)
  CONTROLLER = Cuida da burocracia da requisição
- MODEL = Cuida da Verdade doss Dados
+ MODEL = Cuida da Verdade dos Dados
   
  Ou seja
   Controller recebe
@@ -1615,8 +1645,7 @@ end
                    CONTROLLER: O Diplomata (Cuida da Burocracia)
  O Controller recebe a "fofoca"(os parâmetros) da internet e pergunta ao Model se aquilo é verdade.
  A burocracia dele é: "Se o Model disse que é verdade, eu respondo 201 Created.
- Se o Model disse que é mentira, eu pego a lista de erros que ele gerou e transformo em um JSON
- para o usuário ler".
+ Se o Model disse que é mentira, eu pego a lista de erros que ele gerou e transformo em um JSON para o usuário ler".
  Isso é Action Controller Overview(Visão Geral).
   
                           Onde ficam as validações?
@@ -1632,6 +1661,8 @@ end
   regras
   limites
   consistência dos dados
+ 
+ O model é quem conversa com o BD, por isso o controller espera.
 
  Primeira validação básica
   Exemplo: nome obrigatório
@@ -1640,8 +1671,20 @@ class User <applicationRecord
   validates :name, presence: true
 end
 =begin
+ validade -> é um método do ActiveRecord
+ Serve para declarar regra de negócio, não salva nada, só verifica.
+ 
+ :name é um simbolo(hash) representando a coluna name da tabela user
+
+ presence: true Regra, não pode ser vazio
+
  Em português:
   Um User só é válido se tiver name.
+   É isso que significa este validate
+
+   Se vazio o Rails vê assim:
+    nil ou 	" "
+
 
   Quando o Controller chama:
    user.save
@@ -1650,4 +1693,177 @@ end
   roda todas as validações
   se alguma falhar → não salva
   guarda os erros em user.errors
+
+  O banco nem é tocado se falhar.
+
+ Imagine o Código:
+=end
+user = User.new(active: true)
+user.save
+=begin
+ Aqui no código foi inicializado o User, porém sem passar name:
+ E definimos validates :name, presence: true
+  Quando tenta salvar: user.save
+  O resultado é
+   false
+ Isso significa que é obrigatório passar o name para o BD, automaticamente o model gera o erro e o guarda em user.erros
+ 
+ “O model empacota os erros e guarda em user.errors.
+  Ele não devolve o erro ao controller.
+  Eu, como programador, uso esses erros no controller
+  para montar a resposta da API.”
+ 
+               user.errors vs user.errors.full_messages
+ user.errors -> É um objeto interno do Rails, estruturado: <ActiveModel::Errors ...>
+ user.errors.full_messages -> É o formato humano:
+  ["Name can't be blank", "Name is too short"]
+
+  Em API o que é devolvido é o formato humano
+  Tanto um como o outro são criados pelo model -> ActiveModel
+  O controller apenas os lê, não cria, não formata e não interpreta.
+   
+
+                      Onde cada coisa vive de verdade
+  user.errors vive dentro da instância do model
+  user.errors.full_messages apenas transforma os erros internos em frases humanas e também vive dentro da classe ActiveModel, o controller só consome
+   
+                          Fluxo interno do erro
+
+ Quando o controller chama o model: user.save
+  O model roda as validações: validates :name, presence: true 
+   Rails executa: O valor de name e verifica se está vazio
+   
+   Se falhar…
+    O Rails não levanta erro
+    Ele faz isso silenciosamente:
+    user.errors.add(:name, "can't be blank")
+    Esse erro fica guardado dentro do model
+
+
+	save retorna false: user.save # => false
+
+    Mas não dispara exceção, ou seja, não para o fluxo do código por isso a execução continua normalmente.
+
+    Controller verifica o resultado
+    if user.save
+      ...
+    else
+      false
+    end
+
+    Aqui o controller não sabe o motivo ainda, ele só sabe: “não salvou”.
+    
+    Controller consulta o Model: user.errors
+    
+    O model responde: “Aqui estão os erros que encontrei”
+    
+	Controller pede os erros formatados: user.errors.full_messages
+
+    O model responde: ["Name can't be blank", "Name is too short"]
+    
+    
+    Isso já vem pronto sem escrever uma linha de código, está Guardado no model
+    O que precisamos fazer e no else passar o erro
+	Exemplo com o verbo put onde o endpoint é update
+=end
+
+def update
+  user = User.find_by(id: params[:id])
+
+  if user&.seve(user_params)
+	render json: user
+  else
+	render json: {errors: user&.full_messages || ["User not found"]}
+	            status: :unprocessable_entity
+  end
+end
+=begin
+ O endpoint recebe o params e baseado no id que chegou do front na requisição, ele vai filtrar esse user pelo seu id
+			
+ Na segunda parte entra na condicional
+  nela temos uma função que o controller vai verificar se os dados são verdadeiros, estando tudo certo volta
+   o controller manda o model salvar, o model verifica as validações, encontra faltando, cria e guarda o erro e retorna falso 
+   o controller vẽ o false, entra no else, pede o erro e o retorna o erro na forma humana para view.
+
+  Dentro do else temos duas mensagens de erro:
+  A que vem do model -> errors: user&.full_messages e -> || ["User not found"]
+ 
+ No caso aqui se o model guarda o erro, o controller não sabe o que tem, só executa.
+ O & safe, não deixa o código parar, então se por acaso o user for nill, e resposta enviada seria null ao front. E isso seria apresentado para o usuário.
+ Para evitar isso temos o || -> ou
+ que significa que se for null o -> full_messages, sera apresentado para o front esta segunda mensagem.
+=end
+
+                              #Validações avançadas no MODEL
+class User < ApplicationRecord
+  validates :name, presence: true, length:{minimum: 3}
+
+  validates :email, presence: true, uniqueness: true
+end
+=begin
+  Lembrando que os erros são guardados em user.errors
+
+ Além do nome ser obrigatório(presence: true), foi acrescentado:
+  length {minimum: 3} -> defini uma regra que este campo deve ser de tamanho mínimo sendo 3 caracteres
+  Se o usuário tentar enviar um nome com apenas 1 ou 2 letras (como "Al" ou "Jo"), o Model vai barrar e dizer que o campo é curto demais.
+   Exemplo: "Name is too short (minimum is 3 characters)"
+
+   Temos também de novo validação no email
+    campo também é obrigatório(presence: true)
+	uniqueness: true -> é o "fiscal de exclusividade" do Rails. Ele garante que não existam dois registros com o mesmo valor naquela coluna no banco de dados.
+     O erro gera -> Email has already been taken" -> Email já foi atendido,
+	  ou seja, ja existe um no banco.
+
+
+ Então quando aplicado: user.errors.full_messages
+  retorna
+  [
+    "Name can't be blank",
+    "Name is too short (minimum is 3 characters)",
+    "Email has already been taken"
+  ]
+ 
+  Resumindo:
+	usando errors: user.full_messages no else assim
+=end
+render json: { errors: user.full_messages }, status: :unprocessable_entity
+=begin
+ Automaticamente o json leva isso:
+=end
+{
+  "errors": [
+    "Name can't be blank",
+    "Name is too short (minimum is 3 characters)",
+    "Email has already been taken"
+  ]
+}
+#                 Controller devolvendo erro estruturado
+# Erros por campo (muito usado em API) -> user.errors.messages
+=begin
+ Este user.errors.messages é tratamento de erro estruturado por campo.
+  Ideal quando:
+   Frontend quer tratar erro por campo
+   Ex: destacar input vermelho, tooltip, etc.
+=end
+render json: {errors: user.errors.messages}, status: :unprocessable_entity
+=begin
+ Automaticamente o json leva isso:
+=end
+{
+  "errors": {
+    "name": ["can't be blank", "is too short"],
+    "email": ["has already been taken"]
+  }
+}
+=begin
+ full_messages é para exibição direta,
+messages é para tratamento estruturado no frontend.
+=end
+#                   Validação customizada
+=begin
+ Além das validações que temos disponíveis no model, podemos criar validações próprias.
+  No model é onde fica as regras de negocio
+  O controller não valida regra somente orquestra.
+  
+ 
 =end
