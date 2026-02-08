@@ -1864,6 +1864,237 @@ messages é para tratamento estruturado no frontend.
  Além das validações que temos disponíveis no model, podemos criar validações próprias.
   No model é onde fica as regras de negocio
   O controller não valida regra somente orquestra.
-  
- 
+   Exemplo de código customizado:
 =end
+class
+  User < applicationRecord
+  validates :name_cannot_be_admin
+
+  private
+
+  def name_cannot_be_admin
+    if name == "admin"
+      errors.add(:name, "cannot be admin")
+    end
+  end
+end
+=begin
+ Aqui nesta validação temos :name_cannot_be_admin
+ Essa é uma função que recebe :name e antes de salvar executa o método.
+ Ela verifica se o que foi escrito no campo name, é admin
+ se for executa um erro
+  O proposito é marcar o objeto como inválido
+ Este exemplo é só para fim didático, para mostrar como se cria uma validação customizada.
+ 
+ O método é privado porque, se torna uma regra interna do model, só funciona aqui, e mostra que as vezes se faz necessário criar, além do método existentes do model.
+ Toda vez que acontecer validações aqui este método sera executado.
+=end
+
+#                     Exceções no Rails (save!, update!, create!)
+=begin
+ Exceções são o jeito que o sistema diz: "Deu ruim, e eu não sei como continuar!".
+ Imagine que seu código é uma receita. Se faltar sal, você (o Controller) percebe e resolve. Mas se o fogão explodir, a receita para na hora. Isso é uma exceção
+
+ Exemplo em API:
+  Os dados não existem: tentar deletar o id 99, porém ele não está no BD. O Rails levanta ActiveRecord::RecordNotFound
+  Erro de conexão: O BD cai
+  Erro de código: Tentar chamar um método em algo que é nil -> NoMethodError
+
+ Qual a diferença entre Validação e Exceção?
+
+  Validação:
+ O que é? -> Erro"esperado"(ex: senha curta)
+ O código para? -> O código não para, o Rails apenas marca como inválido.
+ Status HTTP -> Geralmente 422 Unprocessable Entity.
+  
+ Exceção:
+  O que é? -> Erro "crítico" ou interrupção do fluxo.
+  O código para? -> Sim. O código para na linha do erro.
+  Status HTTP -> Geralmente 404 Not Found ou 500 Internal Error
+
+ Até o que foi visto de .save e .update foram:
+  user.save
+  user.update(user_params)
+
+  Esses métodos não levante erro, apenas retornam:
+   true -> deu certo ou false -> falhou por validação.
+
+  É por isso que usamos If else
+   if user.save 
+    .
+   else
+   render json: { errors: user.errors.full_messages }
+   end
+
+  Se deu certo execute isso....
+  Se deu falhou faça isso ...
+ 
+  Para evitar essas escrita longa temos essa opção -> !
+  ! isso se chama -> bang
+   em português: Se der errado GRITE!
+  
+  Usando o bang não temos retorno de true ou false
+   com bang temos levantamento de exceção
+ 
+ Isso user.save -> retorna true ou false
+ Isso user.save! -> salva ou levanta exceção
+
+  O bang é excelente quando:
+   Script de migração de dados: Onde não se quer que o processo continue se um registra falhar.
+   Transactions: Se estiver salvando um Pedido e temos vários itens neste mesmo pedido, se usa o ! para que, se um item falhar, tudo seja cancelado(Rollback).
+
+ Perceba que tem casos para usar o ! bang
+ Assim como tem casos para usar & safe, falado anteriormente para evitar a exceção.
+  
+ Imagine este caso:
+  Imagine que você quer o nome do usuário: user.name.
+  Se o user for nil (não encontrado no banco), o Rails vai travar sua API com um erro 500.
+  Para evitar o erro técnico, exceção, usa o &safe para não permitir o travamento da API.
+
+  Temos ai duas diferenças para o uso correto de bang ou &.
+
+  Além disso, usar o ! bang melhora o código deixando-o mais limpo.
+   O código abaixo representa isso dito:
+=end
+# aqui temos o create sem o !
+class UsersController < ApplicationController
+  def create
+    user = User.new(
+      name: params[:name],
+      active: params[:active]
+    )
+    if user.save
+      render json: user, status: 201
+    else
+      render json: {errors: user.erros.full_messages}, status: 422
+    end
+  end
+end
+
+# olha a diferença com !
+def create
+  user = User.create!(user_params)
+  render json: user, status: :created
+end
+=begin
+ No primeiro código, primeiro filtra depois entra no if else para resolver
+ No segundo veja que o filtro ja é feito resolvendo e, na outra linha ja devolve a reposta
+  Isso ->  render json: user, status: :created
+   Em português:
+    “Pegue o objeto user, transforme em JSON e envie como resposta HTTP com status 201”
+     Aqui não existe lógica de erro
+     Esse render só roda se tudo deu certo
+
+
+ Perceba que o erro no primeiro é tradado com full_messages
+  Erro que o model empacotou e guardou em user.errors
+  Neste exemplo é o controller que esta resolvendo
+  porque ele vai olhar o errors, e o retorna para json
+
+ NO segundo o controller confia no model, se der ruim o sistema resolve.
+  Aqui no segundo ele chama o model direto e deixa com ele.
+  O model vê !, sabe que não precisa retornar false, sabe que tem que fazer a exceção
+
+  O ! altera completamente o fluxo.
+  Sem o ! é:
+  valida
+  falha?
+  retorna false
+  guarda erros em user.errors
+  código continua
+  você precisa de if/else
+  para controller atuar
+
+
+  Fluxo do model:
+    roda validações
+	se passar salva
+	se falhar -> lança a exceção
+     ele chama -> raise ActiveRecord::RecordInvalid
+    raise -> significa subida
+	então isso raise ActiveRecord::RecordInvalid
+	significa: suba a exceção quem esta no ActiveRecord em RecordInvalid
+
+	RecordInvalid -> registro invalido
+	antes era o errors que empacotava o erro, para o controller
+	aqui é RecordInvalid quem detém o erro
+ 
+ O Rials captura o erro através de rescue_from
+ Este abaixo:
+=end
+class ApplicationController < ActionController::API
+  rescue_from ActiveRecord::RecordInvalid, with: :handle_invalid_record
+
+  def handle_invalid_record(error)
+    render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
+  end
+end
+=begin
+ O ActionController::API é uma versão "fitness" (leve) do controlador padrão do Rails.
+  ApplicationController esta herdando ActionController::API
+  Dito isso temos uma classe voltada para API.
+
+  Isso aqui: class ApplicationController < ActionController::API
+  quer dizer:
+   “Estou criando o controller base da aplicação, voltado para API”
+   Isso significa que tudo que estiver aqui, serve para toda API, sem precisar repetir no controller.
+
+ ActionController::API (importante)
+ Rails tem dois modos:
+ ActionController::Base → apps com HTML, views, cookies
+ ActionController::API → somente API (JSON)
+  Aqui você está dizendo:
+ “Essa aplicação não renderiza páginas, só responde dados”
+  
+ rescue_from -> Regatar a partir
+ ActiveRecord::RecordInvalid isso aqui é: o erro esta em RecordInvalid e este está em ActiveRecord
+
+ Então isso -> rescue_from ActiveRecord::RecordInvalid, significa:
+ Resgate o erro a partir de RecordInvalid que esta no AtiveRecord
+  with -> com e handle_invalid_record -> lidar_registro_inválido
+   ou seja: regate o erro, e entre na função para tratar o erro e enviar resposta.
+ Este trecho abaixo faz isso, envia resposta igual do if e else do controller
+  def handle_invalid_record(error)
+    render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
+  end
+
+ rescue_from faz:
+  Ele diz ao Rails:
+  “Quando esse erro explodir, não derrube a aplicação.
+  Chame o método handle_invalid_record.”
+   O erro vira um objeto Ruby, não uma mensagem solta.
+    este objeto é a exceção, empacotada em RecordInvalid e preparada para o json
+
+	               Então… como o erro sai do model?
+=end
+User.create!(name: "")# digamos que esta vazio, ou seja nill
+# No model
+validates :name, presence: true
+=begin
+ Rails faz:
+ 1 roda validações
+ 2 encontra erro
+ 3 cria objeto RecordInvalid
+ 4 lança exceção
+=end
+raise ActiveRecord::RecordInvalid
+# A exceção carrega o model dentro dela
+
+# O código do controller para aqui
+def create
+  user = User.create!(user_params)   # 💥 explode aqui
+  render json: user, status: :created # ❌ nunca executa
+end
+=begin
+ Esse render não roda
+ Ele não recebe erro nenhum
+ Ele não sabe que houve erro
+
+ Quando a exceção explode:
+ Rails interrompe o método
+  2Procura um rescue_from compatível
+  3Encontra no ApplicationController
+  4Chama:
+=end
+rescue_from ActiveRecord::RecordInvalid, with: :handle_invalid_record
+# passando handle_invalid_record(error)
