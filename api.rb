@@ -1890,6 +1890,10 @@ end
  Toda vez que acontecer validações aqui este método sera executado.
 =end
 
+
+
+
+
 #                     Exceções no Rails (save!, update!, create!)
 =begin
  Exceções são o jeito que o sistema diz: "Deu ruim, e eu não sei como continuar!".
@@ -1912,8 +1916,8 @@ end
   O código para? -> Sim. O código para na linha do erro.
   Status HTTP -> Geralmente 404 Not Found ou 500 Internal Error
 
- Ate aqui o que vimos dos métodos .save e .update, é que eles não levantam parâmetros.
-  Esses métodos não levante erro, apenas retornam:
+ Ate aqui o que vimos dos métodos .save e .update, é que eles não levantam exceções.
+  Esses métodos só retornam:
    true -> deu certo ou false -> falhou por validação.
 
   É por isso que usamos If else
@@ -1937,7 +1941,7 @@ end
  Isso user.save! -> salva ou levanta exceção
 
   O bang é excelente quando:
-   Script de migração de dados: Onde não se quer que o processo continue se um registra falhar.
+   Script de migração de dados: não quero que o processo continue se um registro falhar
    Transactions: Se estiver salvando um Pedido e temos vários itens neste mesmo pedido, se usa o ! para que, se um item falhar, tudo seja cancelado(Rollback).
 
  Perceba que tem casos para usar o ! bang
@@ -1990,7 +1994,7 @@ end
   ou seja controller recebendo resposta true ou false e
   agindo dentro do if e else
 
- NO segundo o controller confia no model, se der ruim o sistema resolve.
+ No segundo o controller confia no model, se der ruim o sistema resolve.
   Aqui no segundo ele chama o model direto e deixa com ele.
   O model vê !, sabe que não precisa retornar false, sabe que tem que fazer a exceção
   caso seja false
@@ -2251,12 +2255,22 @@ end
  #                  Erro 404 REAL (ActiveRecord::RecordNotFound)
 =begin
  Isso que vimos acima RecordNotFound, ou seja, Registro não encontrado gera o STATUS 404.
- O 404 Not Found é o status que diz: "A rota existe, mas o recurso específico que você pediu não foi encontrado"
- Ele acontece principalmente quando o método find falha.
+ O status 404 Not Found é o status que diz: "A rota existe, mas o recurso específico que você pediu não foi encontrado"
+ Ele acontece principalmente quando o método find não encontra o recurso.
 
  O erro 404 nunca deve ser tratado no controller
  O melhor é trata-lo uma vez só no ApplicationController.
+
+ Só recapitulando
+  O Exemplo dó código abaixo é feito para que esse caso seja tratado:
 =end
+def destroy
+  user = User.find(params[:id])
+  user.destroy!
+  head :no_content
+end
+
+
 class ApplicationController < ActionController::API
   rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
 
