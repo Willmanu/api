@@ -1251,9 +1251,102 @@ end
  Controller cuida da "burocracia" da entrada e o Model cuida da "verdade" dos dados.  
 =end
 
+#                                      PATCH
+=begin
+ PATCH -> significa remendo
+  A ideia do PATCH é justamente essa: remendar, como em uma calça rasgada que recebe um pano para tampar o furo, brecha etc.
+  O PATCH em tecnologia é conhecido por corrigir falhas, fechar brechas de seguranças ou consertar "bugs" em programas ou jogos.
+
+ O patch é usado para atualização assim como o put
+ Enquanto o put substitui o recurso inteiro o patch o faz parcialmente.
+
+ 
+ PUT
+  Substitui o recurso inteiro
+  
+  Você envia toda a representação do objeto
+  
+  Se faltar campo, ele pode ser apagado
+ OU seja: PUT: Substitui o recurso inteiro. Se você enviar apenas o nome, o sistema pode tentar "limpar" os outros campos.
+
+
+ PATCH
+  Atualização parcial
+  
+  Envia apenas os campos que mudaram
+ Ou  seja:PATCH: Faz uma alteração parcial. Ele altera apenas o que você enviar, mantendo o restante como está.
+  
+  É o padrão moderno (e o que Rails usa)
+   O Rails usa o patch por padrão para update
+   O put ainda existe por compatibilidade e semântica HTTP, mas ambos apontam para a mesma action.
+    patch "/users/:id", to: "users#update"
+    put   "/users/:id", to: "users#update"
+
+ Tanto o put quanto patch usam as mesma lógica de código apresentada aqui.
+ O método .update(user_params) do ActiveRecord é inteligente o suficiente para atualizar apenas as chaves presentes no hash user_params.
+
+  Se você quiser ser mais rigoroso e garantir que está tratando uma atualização parcial (estilo PATCH), o código seria exatamente o mesmo, mas com atenção aos Strong Parameters:
+=end
+def user_params
+  # Aqui está o segredo: o permit só deixa passar o que foi enviado.
+  # Se o JSON enviado for { "name": "Novo Nome" }, 
+  # o Rails não mexerá no campo :active.
+    params.require(:user).permit(:name, :active)
+end
+=begin
+ Exemplo de Requisição (JSON)
+  Se você fizer uma chamada via Postman ou Frontend usando o verbo PATCH:
+  URL: /users/1
+ Body Json:
+=end
+{
+  "user": {
+    "name": "João Silva"
+  }
+}
+=begin
+ Perceba que na requisição não veio o active
+ O código foi escrito uma única vez para servir a varias situações diferente.
+ O permit é como porteiro e este tem uma lista de convidados na mão.
+ Não importa o que vem, só pode passar name e active.
+ Mesmo que não venha o active o código continuará funcionado normalmente.
+ O Rails vai transformar essa requisição em um objeto params
+ Ele ignora o que não foi enviado. Se o campo active não veio no JSON, ele simplesmente não existe dentro do hash naquele momento.
+ O resultado do user_params será exatamente isto: { name: "João Silva" }
+ 
+  Quando é chamado o .update, o Rails faz o seguinte:
+   Ele olha para o hash que você passou: {"name" => "João Silva"}.
+   Ele compara esses dados com o que já está no banco de dados.
+   Ele ignora as colunas que não estão no hash.
+ 
+ Se o campo active não foi passado no hash, o Rails entende que você não quer mexer nele.
+ Ele não assume que é null nem false; ele apenas o ignora na construção do comando SQL.
+ exemplo:
+=end
+UPDATE users SET name = 'João Silva', updated_at = '...' WHERE id = 1;
+
+=begin
+ Ele só esta setando o nome onde o id é 1, o demais elementos deste objeto permanecem intactos.
+
+ Com o puts o caso fica assim
+  Exemplo:
+=end
+UPDATE users SET name = 'João Silva', active = NULL, updated_at = '...' WHERE id = 1;
+
+=begin
+ Percebe que ele torna o active em null
+
+ Por padrão, o Rails aceita PUT e PATCH para a mesma ação.
+ Agora para que o Rails aceite somente o PATCH, precisamos definir isso em routes.br, no arquivo de rotas que veremos mais a frente em rotas.
+ 
+ PATCH é o verbo correto para update em APIs REST hoje.
+=end
+
+
 #                                ENDPOINT DELETE
 
 =begin
+  
  DELETE significa apagar ou remover.
  Em tecnologia DELETE = tirar da existência visível
  Apagar não significava destruir o material, e sim retirar o conteúdo visível.
@@ -1487,9 +1580,15 @@ fetch("/users/5", { method: "DELETE" })
    resources :users, only: [:index, :show, :create, :update, :destroy]
 
    ou
-   
+
    resources :users, except: [:new, :edit]
   Ao usar o except: [:new, :edit], você está dizendo ao Rails: "Crie o pacote padrão de rotas, MAS deixe de fora essas duas"
+
+  O comando resources é importante porque ele cria as rotas na ordem correta.
+  E isso é muito importante para o Rails, cada rota tem sua posição correta.
+
+  Porém escrevendo as rotas na ordem certa, não é obrigatório resources estar em routes.rb
+  As rotas por si ja conseguem fazer o rails levar as requisições para a action corretamente.
 
  Para ver as rotas, no terminal escreve-se -> rails routes
   o que se vê é algo do tipo:
@@ -1605,7 +1704,57 @@ end
  No endpoint tem a logica para tratar os dados da requisição, neste caso do delete, o controller atua novamente enviando a ordem para o model
  O model recebe a ordem e retorna para o controller com a resposta
  E o processo acontece ao inverso de como veio até chegar ao front que envio a requisição.
+
+
+                  Rota do PATCH que atualiza parcialmente
+ Sabemos que o put se não tomarmos cuidado ao escrever ele, vai atualizar o objeto inteiro.
+ Por isso o patch é a melhor recomendação.
+ Para definir o patch para atualização e não o put, precisamos definir isso no routes.rb
 =end
+
+Rails.application.routes.draw do
+  # Restringe para aceitar apenas o verbo PATCH na rota de update
+  resources :users, only: [] do
+    patch :update, on: :member
+  end
+end
+=begin
+  o only ja sabemos que é uma chave hash de opções do método resource.
+   Aqui:
+    resources :users, only: [] do
+     patch :update 
+
+  Esta dizendo: Para o recurso users, use o patch para atualizações(:update)
+  
+  Além disso quando definimos uma rota, precisamos dizer a quem aquela ação se refere:
+   a um único registro ou à coleção inteira.
+  O on: :member significa que a rota será criada focada em um membro específico daquela tabela (ou seja, um único usuário).
+  
+  Ao usar on: :member, o Rails automaticamente adiciona o :id na URL para você.
+  Veja a comparação:
+   Com on: :member:
+   Rota gerada: PATCH /users/:id/update 
+    Através dessa rota o Rails sabe que ira levar para a action-> user#update
+  
+  Como é uma atualização, sera feita em um formulário e, automaticamente o id será colhido pelo front e transportado até a action pelo params
+   No Controller: Você terá acesso ao params[:id] para fazer o User.find(params[:id]).
+
+ Normalmente, o Rails já faz isso automaticamente quando usamos o padrão APIs Rest:
+=end
+Rails.application.routes.draw do
+  # Restringe para aceitar apenas o verbo PATCH na rota de update
+ resources :users, only: [:update]
+end
+=begin
+ Agora para que escrever tudo aquilo se temos esse mais curto
+  É importe ver os dois meios, porque podemos pegar uma aplicação que usa o primeiro
+  Assim saberemos do que se trata.
+ A diferença é que o padrão gera a URL /users/:id, enquanto o código com on: :member dentro do bloco gera /users/:id/update. No mundo das APIs REST, o padrão (/users/:id) é o mais utilizado.
+
+ Dica de ouro para APIs Rails:
+ Se você estiver construindo uma API para um PDV (Ponto de Venda), o uso do PATCH é obrigatório para performance. Imagine atualizar um estoque de 10.000 itens; você não quer enviar o objeto inteiro do produto, apenas a nova quantidade (quantity).
+=end
+
 
 #                   Validações no Model + Retorno de erro de API
 
