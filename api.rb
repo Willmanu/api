@@ -1775,7 +1775,7 @@ end
 
  Validação é a camada de segurança, que impede que dados "sujos" ou incompletos entrem no banco de dados. No Rails, usamos o Active Record Validations.
 
- Erro em API é: a tradução técnica da falha do Model para uma linguagem que o Front-end (React, Vue, Mobile) entenda, geralmente em JSON acompanhado de um Status Code HTTP
+ Erro em API é: a tradução técnica da falha do Model para uma linguagem que o Front-end (React, Vue, Mobile) entenda, geralmente em JSON e acompanhado de um Status Code HTTP
 			
  Ideia Central(Antes do Código)
  CONTROLLER = Cuida da burocracia da requisição
@@ -1862,7 +1862,7 @@ user.save
   Eu, como programador, uso esses erros no controller
   para montar a resposta da API.”
  
-               user.errors vs user.errors.full_messages
+                         user.errors vs user.errors.full_messages
  user.errors -> É um objeto interno do Rails, estruturado: <ActiveModel::Errors ...>
  user.errors.full_messages -> É o formato humano:
   ["Name can't be blank", "Name is too short"]
@@ -1876,7 +1876,7 @@ user.save
   user.errors vive dentro da instância do model
   user.errors.full_messages apenas transforma os erros internos em frases humanas e também vive dentro da classe ActiveModel, o controller só consome
    
-                          Fluxo interno do erro
+                              Fluxo interno do erro
 
  Quando o controller chama o model: user.save
   O model roda as validações: validates :name, presence: true 
@@ -1944,6 +1944,7 @@ end
 =end
 
                               #Validações avançadas no MODEL
+
 class User < ApplicationRecord
   validates :name, presence: true, length:{minimum: 3}
 
@@ -2005,8 +2006,8 @@ render json: {errors: user.errors.messages}, status: :unprocessable_entity
   }
 }
 =begin
- full_messages é para exibição direta,
-messages é para tratamento estruturado no frontend.
+ errors.full_messages é para exibição direta,
+ errors.messages é para tratamento estruturado no frontend.
 =end
 #                   Validação customizada
 =begin
@@ -2043,13 +2044,13 @@ end
 
 
 
-#                     Exceções no Rails (save!, update!, create!)
+#                                 Exceções no Rails 
 =begin
  Exceções são o jeito que o sistema diz: "Deu ruim, e eu não sei como continuar!".
- Imagine que seu código é uma receita. Se faltar sal, você (o Controller) percebe e resolve. Mas se o fogão explodir, a receita para na hora. Isso é uma exceção
+ Imagine que seu código é uma receita. Se faltar sal, você (o Controller) percebe e resolve. Mas se o fogão explodir, a receita para na hora. Isso é uma exceção(parar na hora)
 
  Exemplo em API:
-  Os dados não existem: tentar deletar o id 99, porém ele não está no BD. O Rails levanta ActiveRecord::RecordNotFound
+  Os dados não existem: ao tentar deletar o id 99, porém ele não está no BD. O Rails levanta ActiveRecord::RecordNotFound -> registro não encontrado -> status HTTP 404
   Erro de conexão: O BD cai
   Erro de código: Tentar chamar um método em algo que é nil -> NoMethodError
 
@@ -2065,6 +2066,8 @@ end
   O código para? -> Sim. O código para na linha do erro.
   Status HTTP -> Geralmente 404 Not Found ou 500 Internal Error
 
+ Exceção gera interrompimento do fluxo
+
  Ate aqui o que vimos dos métodos .save e .update, é que eles não levantam exceções.
   Esses métodos só retornam:
    true -> deu certo ou false -> falhou por validação.
@@ -2079,7 +2082,7 @@ end
   Se deu certo execute isso....
   Se deu falhou faça isso ...
  
-  Para evitar essas escrita longa temos essa opção -> !
+  Para evitar essas escrita longa temos essa opção--> !
   ! isso se chama -> bang
    em português: Se der errado GRITE!
   
@@ -2089,6 +2092,8 @@ end
  Isso user.save -> retorna true ou false
  Isso user.save! -> salva ou levanta exceção
 
+ O !bang não é a exceção, ajuda a fazer o levantamento de exceção
+
   O bang é excelente quando:
    Script de migração de dados: não quero que o processo continue se um registro falhar
    Transactions: Se estiver salvando um Pedido e temos vários itens neste mesmo pedido, se usa o ! para que, se um item falhar, tudo seja cancelado(Rollback).
@@ -2097,7 +2102,7 @@ end
  Assim como tem casos para usar & safe, falado anteriormente para evitar a exceção.
   
  Imagine este caso:
-  Imagine que você quer o nome do usuário: user.name.
+  Imagine que você quer o nome do usuário: user.name
   Se o user for nil (não encontrado no banco), o Rails vai travar sua API com um erro 500.
   Para evitar o erro técnico -> exceção, usa o &safe para não permitir o travamento da API.
 
@@ -2109,15 +2114,19 @@ end
 # aqui temos o create sem o !
 class UsersController < ApplicationController
   def create
-    user = User.new(
-      name: params[:name],
-      active: params[:active]
-    )
+    user = User.new(user_params)
+
     if user.save
-      render json: user, status: 201
+      render json: user, status: :created
     else
-      render json: {errors: user.erros.full_messages}, status: 422
+      render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
     end
+  end
+
+  private
+
+  def user_params
+    params.require(:user).permit(:name, :active)
   end
 end
 
@@ -2125,6 +2134,12 @@ end
 def create
   user = User.create!(user_params)
   render json: user, status: :created
+
+  private
+
+  def user_params
+    params.require(:user).permit(:name, :active)
+  end
 end
 =begin
  No primeiro código, primeiro filtra depois entra no if else para resolver
@@ -2163,10 +2178,10 @@ end
     roda validações
 	se passar salva
 	se falhar -> lança a exceção
-     ele chama -> raise ActiveRecord::RecordInvalid
+     ele chama -> raise ActiveRecord::RecordInvalid para registro invalido
     raise -> significa subida
 	então isso -> raise ActiveRecord::RecordInvalid
-	significa: suba a exceção quem esta no ActiveRecord em RecordInvalid
+	significa: suba a exceção quem esta no ActiveRecord em RecordInvalid(Registro Invalido)
 
 	RecordInvalid -> registro invalido
 	antes era o -> errors que empacotava o erro, para o controller
@@ -2199,7 +2214,7 @@ end
   Aqui você está dizendo:
  “Essa aplicação não renderiza páginas, só responde dados”
   
- rescue_from -> Regatar a partir
+ rescue_from -> Resgatar a partir
  ActiveRecord::RecordInvalid isso aqui é: o erro esta em RecordInvalid e RecordInvalid  este está em ActiveRecord
 
  Então isso -> rescue_from ActiveRecord::RecordInvalid, significa:
@@ -2220,10 +2235,14 @@ end
    O erro vira um objeto Ruby, não uma mensagem solta.
     este objeto é a exceção, empacotada em RecordInvalid e preparada para o json
 
-	               Então… como o erro sai do model?
+ Então, usar o !bang, gera mudança de fluxo.
+ Tudo esta sendo tratado em outro ambiente fora do controller sem if e else.
+
+
+	                  Então… como o erro sai do model?
 =end
 User.create!(name: "")# digamos que esta vazio, ou seja nill
-# No model
+# No model a validação diz que nome é obrigatório
 validates :name, presence: true
 =begin
  Rails faz:
@@ -2233,7 +2252,7 @@ validates :name, presence: true
  4 lança exceção
 =end
 raise ActiveRecord::RecordInvalid
-# A exceção carrega o model dentro dela
+# A exceção RecordInvalid carrega o objeto que deu erro dentro dela
 
 # O código do controller para aqui
 def create
@@ -2272,7 +2291,7 @@ end
  Nem passa lá no método def create
 			
  Rails mostra
-  HTTP/1.1 422 Unprocessable Entity
+  HTTP/1.1 422 Unprocessable Entity(Entidade não processável)
   Content-Type: application/json
  e o corpo do json fica:
 =end
@@ -2298,15 +2317,200 @@ end
    Ele encerra a requisição
    O JS recebe normalmente
 
- O rescue é um controller invisível, global.
-=end
+ O rescue_from é um controller invisível, global.
 
-#                            destroy! + head :no_content
+ Perceba que a exceção aqui foi:
+  rescue_from ActiveRecord::RecordInvalid
+   Porque o registro foi invalido(RecordInvalid)
+
+ Com isso podemos dizer que a exceção dependo do erro, do que acontece.
+
+  Além da exceção -> ActiveRecord::RecordInvalid com status HTTP 422
+  Temos:
+   ActiveRecord::RecordNotFound → 404 
+   ActiveRecord::RecordNotDestroyed → 422 
+   ActionController::ParameterMissing → 400
+
+ Atençaõ!!!!
+  Todas as exceções rescue_from são escritas em app/controllers/users_controller.rb
+
+ Vamos ver um próximo exemplo.
+=end
+POST /users
+Content-Type: application/json
+
+{
+  "user": {
+    "name": "William",
+    "email": "william@email.com"
+  }
+}
+=begin
+ Aqui acima temos um requisição user com os campos name e email
+
+ Essa requisição esta marcada como post, ou seja, são dados para persistirem no banco.
+ Criação de um novo usuário, onde a action crete vai atuar.
+=end
+def create
+  user = User.create!(user_params)
+  render json: user, status: :created
+
+  private
+
+  def user_params
+    params.require(:user).permit(:name, :active)
+  end
+end
+=begin
+ Antes de criar este usuário no BD, os dados vão passar pelo método privado onde temos:
+ require e permit falado anteriormente
+
+ Abaixo temos a mesma requisição porém com um erro:
+=end
+POST /users
+Content-Type: application/json
+
+{
+  "name": "William",
+  "email": "william@email.com"
+}
+=begin
+ Não existe a chave "user": como na anterior.
+
+
+ Quando chega aqui:
+=end
+params.require(:user)
+
+# O Rails procura
+params[:user]
+# não encontra a chave user e faz
+raise ActionController::ParameterMissing.new(:user)
+=begin
+ Neste caso o Rails não chama rescue_from ele já tem um mecanismo interno que faz isso:
+ Quando uma exceção desse tipo acontece, ele:
+ 
+ Intercepta a exceção
+ Converte para HTTP 400
+ Retorna resposta padrão
+ Isso acontece dentro do middleware do Rails (ActionDispatch).
+ Ou seja:
+ Você não precisa declarar:
+ rescue_from ActionController::ParameterMissing
+  Porque o Rails já sabe que isso é um erro 400.
+
+ Vimos acima as seguintes exceções:
+  ActiveRecord::RecordInvalid → Registro Invalido status HTTP 422 
+  ActiveRecord::RecordNotFound → Registro não Encontrado HTTP 404 
+  ActionController::ParameterMissing → Parâmetro Ausente HTTP 400 
+
+ Para concluir vamos ver:
+ ActiveRecord::RecordNotDestroyed → 422 
+
+ O sistema recebe uma requisição para apagar um usuário
+=end
+# Requisição em JS
+fetch("http://localhost:3000/users/5", {
+  method: "DELETE"
+})
+.then(response => {
+  if (response.status === 204) {
+    console.log("Usuário deletado com sucesso");
+  } else {
+    return response.json().then(data => {
+      console.log("Erro:", data);
+    });
+  }
+})
+.catch(error => {
+  console.error("Erro na requisição:", error);
+});
+
+=begin
+ O usuário esta com o id 5
+ O Rails recebe a requisição e olha o verbo delete e procura a rota
+  delete "users/:id", to: users/destroy
+ 
+  O Rails leva para action destroy que tem o seguinte código
+=end
+def destroy
+  user = User.find(params[:id])
+  user.destroy!
+  head :no_content
+end
+=begin
+ Aqui não esta sendo usado o !bang e sim o find
+  find é como o !bang levanta exceção
+   como precisa filtrar o usuário aqui é melhor usar o find
+
+ Ja vimos o find_by e sabemos o que ele é flexível, vc passa o id porém ele busca o objeto por qualquer coluna -> name, email etc.
+ Se ele não achar nada ele retorna nil, repito retorna nil.
+
+ Find é o RIGOROSO, não retorna nada, explode a exceção
+  Se quando for deletar não achar o usuário a exceção é:
+  ActiveRecord::RecordNotFound(registro não encontrado) e interrompe o fluxo do código.
+ 
+  Neste caso o find acha e não da exceção, porque seu proposito é só achar o id.
+
+  O fluxo vai para user.destroy! antes de apagar ele verifica o model.
+   Lá ele acha isso:
+=end
+class User < ApplicationRecord
+  before_destroy :prevent_admin_deletion
+
+  private
+
+  def prevent_admin_deletion
+    if admin?
+      errors.add(:base, "Admin cannot be deleted")
+      throw(:abort)
+    end
+  end
+end
+=begin
+ Isso acima é um código que fica em app/models/user.rb
+  Ele é uma regra de negocio
+  Antes de apagar o usuário, o Rails verifica este código.
+    
+  Dentro deste código temos:
+   before_destroy -> significa antes de destruir
+    Ele é um callback(revogador) do ActiveRecord, ou seja, ele volta para trás, volta atrás na decisão se encontrar uma regra.
+
+ :prevent_admin_deletion -> significa impedir_exclusão_de_administrador
+   Esse é o método que é chamado por before_destroy
+
+   Dentro dele temos:
+    if admin? verifica se o usuário é administrador pelo campo boolean no banco: admin:boolean
+      Se este for admin vai executar o trecho abaixo 
+      errors.add(:base, "Admin cannot be deleted")
+
+      errors.add -> adiciona um erro ao objeto
+      
+      throw(:abort) -> throw é jogar e abort é abortar
+
+ Com isso o Rails olha para o seu Model e vê: "Opa, tenho um before_destroy aqui!".
+  Ele executa o seu método prevent_admin_deletion.
+  O Model "trava": O throw(:abort) faz o método .destroy! perceber que a operação falhou.
+  A Captura: O Rails interrompe a execução do seu UsersController e olha para o topo da classe (ou para o pai, o ApplicationController).
+    O Escudo: Ele encontra o rescue_from ActiveRecord::RecordNotDestroyed.
+=end
+class ApplicationController < ActionController::API
+  rescue_from ActiveRecord::RecordNotDestroyed, with: :handle_not_destroyed
+
+  private
+
+  def handle_not_destroyed(exception)
+    render json: { errors: exception.record.errors.full_messages }, status: :unprocessable_entity
+  end
+end
+
+
+#                       destroy + find + head :no_content(não tenho conteúdo)
 =begin
  O que significa DELETE em REST?
   “Apague o recurso.
   Se deu certo, não preciso de dados de volta.”
-  Por isso o status certo é 204 No Content.
+  Por isso o status certo é 204 No Content(sem conteúdo).
 
  Código sem o ! abaixo
 =end
@@ -2317,7 +2521,7 @@ def destroy
     user&.destroy
     head :no_content
   else
-    render json: { error: "User not found" }, status: :not_found
+    render json: { error: e.record.errors.full_messages }, status: :unprocessable_entity
   end
 end
 =begin
@@ -2353,10 +2557,14 @@ end
   coluna -> name, email etc.
   Se ele não achar nada ele retorna nil, repito retorna nil.
 
-
-  Find é o RIGOROSO, não retorna nada, explode a exceção ActiveRecord::RecordNotFound e, interrompe o fluxo do código.
+  Find é o RIGOROSO, não retorna nada, explode a exceção:
+   ActiveRecord::RecordNotFound e, interrompe o fluxo do código.
   Se não for tratado gera o erro 404(Not Found) no ambiente de desenvolvimento.
-  RecordNotFound significa: registro não encontrado. É aqui que o erro vai ficar.
+  RecordNotFound significa: registro não encontrado.
+
+ Perceba que para esse caso é :RecordNotFound 
+ O anterior foi RecordInvalid
+ Ou seja, duas exceções diferente em casos diferentes.
 
   Então o find não perdoa, se não acha o id, não procura por outro campo.
   Chama logo:
@@ -2385,67 +2593,33 @@ end
   Aqui ja sabemos que isso será empacotado o Rails vai enviar para JS sem corpo, sem json.
 
                                   ATENÇÂO:
-	Aqui nesta altura sabemos que quando uma requisição chega, o Rails vai olhar primeiro as rotas, para que assim posso levar as requisição nos endpoints corretos. De acordo com cada verbo tem um endpoint próprio.
-
-	Os endpoint são métodos no controller, que faz uma ação conforme a logica de resposta para cada requisição.
-
-	Nesta logica percebi que temos as validações para serem feitas antes dos dados persistirem no banco.
-	Temos que proteger o BD, construindo uma segurança de validação para esses dados, o strong parametro.
-	Temos o & safe para dar continuidade ao fluxo do código.
-	
-	E agora estamos error que são tratados pelo controller e pelo model
-	O erros serem tratados pelo model é bem melhor porque, temos um controller magro, limpo.
-	Porque o model tem formas próprias de tratar os erros.
-
-	Cada erro gera um status HTTP
- Agora segue mais um assunto sobre erros   
-=end
-  
- #                  Erro 404 REAL (ActiveRecord::RecordNotFound)
-=begin
- Isso que vimos acima RecordNotFound, ou seja, Registro não encontrado gera o STATUS 404.
+ Erro 404 REAL (ActiveRecord::RecordNotFound)
+  Isso que vimos acima RecordNotFound, ou seja, Registro não encontrado gera o STATUS 404.
  O status 404 Not Found é o status que diz: "A rota existe, mas o recurso específico que você pediu não foi encontrado"
  Ele acontece principalmente quando o método find não encontra o recurso.
 
- O erro 404 nunca deve ser tratado no controller
- O melhor é trata-lo uma vez só no ApplicationController.
+ O erro 404 nunca deve ser tratado na action
+ O melhor é trata-lo uma vez só no ApplicationController, pelo Rails como no exemplo acima
+ 
+ O Rails NÃO tem um rescue_from diferente para cada action
 
- Só recapitulando
-  O Exemplo dó código abaixo é feito para que esse caso seja tratado:
+ O Rails não associa exceção a action.
+ Ele associa exceção ao que aconteceu dentro da action.
+
+  Ou seja:
+   A action não define o erro.
+   O que define o erro é o método que você chamou lá dentro.
+
+ O fluxo real é assim
+  A requisição bate na rota
+  A rota chama a action
+  A action executa código
+  Se uma exceção for levantada
+  O Rails procura um rescue_from compatível
+  Se encontrar → trata
+  Se não encontrar → 500
+
 =end
-def destroy
-  user = User.find(params[:id])
-  user.destroy!
-  head :no_content
-end
 
-
-class ApplicationController < ActionController::API
-  rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
-
-  private
-
-  def record_not_found
-    render json: { error: "Resource not found" }, status: :not_found
-  end
-end
-# O que acontece no fluxo
-user = User.find(params[:id])
-=begin
- Se não existir:
- ActiveRecord lança RecordNotFound
- Rails para tudoS
- Chama o rescue_from
- Responde 404
- Controller nem sabe que deu erro
- JS recebe JSON limpo e padronizado
-=end
-#Controller agora fica assim (limpo)
-def destroy
-  user = User.find(params[:id])
-  user.destroy!
-  head :no_content
-end
-# Sem if, sem else, sem &.
 
 

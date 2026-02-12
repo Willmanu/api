@@ -25,7 +25,7 @@ end
  Se você quiser retornar um erro, aí você precisa avisar: status: :unprocessable_entity ou status: :not_found.
 =end
 
-# model resposta para o bang com o !bang
+# MODEL resposta para o bang com o !bang
 class User < ApplicationRecord
   scope :active!, -> {
     users = where(active: true)
@@ -54,6 +54,20 @@ end
 
 
 # create
+# Javascript requisição
+fetch("http://localhost:3000/users", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    name: "Carlos",
+    active: true
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data))
+
 # ROTA = post "/users", to: "users#create"
 class UsersController < ApplicationController
   def create
@@ -98,10 +112,15 @@ end
 
 
 # SHOW
+# Sistema de fora pedindo dados para minha API
+fetch("http://localhost:3000/users/5")
+  .then(response => response.json())
+  .then(data => { console.log(data.name)})
+
 # ROTA = get "/users/:id", to: "users#show"
 
 def show
-  user = User.find_by(id: params[:id])
+  user = User.find_by(id: params[:id])# find_by busca qualquer campo
 
   if user
     render json: user
@@ -112,7 +131,7 @@ end
 
 # SHOW com !BANG
 def show
-  user = User.find(params[:id])
+  user = User.find(params[:id])# busca exclusivamente o id
   render json: user
 end
 
@@ -130,6 +149,16 @@ class ApplicationController < ActionController::API
 end
 
 # PUT/ PATCH
+# Requisição feita pelo HTML 
+<form action="/user/5" method="post">
+ <input type="hidden" name="_method" value="put">
+
+   <input type="text" name="user[name]" value="William">
+  <input type="checkbox" name="user[active]" checked>
+
+  <button type="submit">Atualizar</button>
+</form>
+
 # ROTA = patch "/users/:id", to: "users#update"
 # ROTA = PUT   "/users/:id", to: "users#update"
 def update
@@ -141,6 +170,12 @@ def update
     render json: { error: "Update failed" },
            status: :unprocessable_entity
   end
+
+  private
+
+  def user_params
+    params.require(:user).permit(:name, :active)
+  end
 end
 
 # PUT/ PATCH com !BANG
@@ -148,6 +183,12 @@ def update
   user = User.find(params[:id])
   user.update!(user_params)
   render json: user
+
+  private
+
+  def user_params
+    params.require(:user).permit(:name, :active)
+  end
 end
 
 # Validação de PUT/PATCH
@@ -155,23 +196,44 @@ class User < ApplicationRecord
   validates :name, presence: true
 end
 
+# Model status HTTP 422
+class ApplicationController < ActionController::API
+  rescue_from ActiveRecord::RecordInvalid, with: :handle_invalid_record
 
-
-
-
-
-#                               destroy ou destroy!
-# destroy sem o !bang
-def destroy
-  user = User.find_by(id: params[:id])
-
-  if user
-    user&.destroy
-    head :no_content
-  else
-    render json: { error: "User not found" }, status: :not_found
+  def handle_invalid_record(error)
+    render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
   end
 end
+
+
+
+
+
+# destroy ou destroy!
+
+# Exemplo: requisição através do Javascript
+fetch("http://localhost:3000/users/5", {
+  method: "DELETE"
+})
+.then(response => {
+  if (response.status === 204) {
+    console.log("Usuário removido com sucesso")
+  }
+  })
+
+# Rota = delete "/users/:id" to: users#destroy
+
+# destroy sem o !bang
+  def destroy
+    user = User.find_by(id: params[:id])
+  
+    if user
+      user&.destroy
+      head :no_content
+    else
+      render json: { error: "User not found" }, status: :not_found
+    end
+  end
 
 # com !bang def destroy
   user = User.find(params[:id])
@@ -189,3 +251,34 @@ class ApplicationController < ActionController::API
     render json: { error: "Resource not found" }, status: :not_found
   end
 end
+
+# EDIT
+# Rota = get "/users/:id/edit", to: "users#edit"
+
+def edit
+  user = User.find_by(id: params[:id])
+
+  if user
+    render json: user
+  else
+    render json: {error: "User not found"}, status: :not_found
+  end
+end
+
+# EDIT não tem o !bang, usa find
+def edit
+  user = User.find(params[:id])
+  render json: user
+end
+
+# MODEL para resposta do find em EDIT
+class ApplicationController < ActionController::API
+  rescue_from ActiveRecord::RecordNotFound, with: :handle_invalid_record
+
+  private
+
+  def handle_invalid_record(error)
+    render json: {error: error.message }, status: :not_found
+  end
+end
+
