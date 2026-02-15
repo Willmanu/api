@@ -3345,7 +3345,7 @@ end
  
                            it "creates a user and returns 201" do
 																							
-
+ A palavra "it" em inglês significa "isto" ou "ele/ela"
  
 =end
 
