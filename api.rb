@@ -3346,7 +3346,32 @@ end
                            it "creates a user and returns 201" do
 																							
  A palavra "it" em inglês significa "isto" ou "ele/ela"
+ O it define o comportamento esperado deste test.
+     da o retorno para o bloco de código (do.....end) do describe post
+    
+   Aqui temos isso -> it + a frase ->"creates a user and returns 201(cria um usuário e retorna 201)
+     aqui o it esta descrevendo o que se espera de resposta do teste
+  
+  Na primeira linha temos o titulo falando que é um teste para User API
+  Na segunda linha fala que é um post, ou seja, vai ser criado um novo usuário
+  Aqui nesta linha: quando este usuário for criado, isto ou ele ou ela retornar o status 201
+    o status 201 significa: que a requisição foi bem sucedida
+
+ Dentro do bloco de código do it(do ....end) temos o params trazendo os dados. E é aqui agora, que vai acontecer a ação que deve ser tomada para validar este dados.
  
+ Perceba que o it conta o que aconteceu de fato, da o retorno que se espera, que é uma resposta que tudo aconteceu bem sucedido.
+   O que se espera aqui no teste é isso: que o usuário seja criado no banco sem erros.
+  
+ Aqui esse teste é feito para que o retorno seja bem sucedido (Caminho Feliz) status 201.
+
+ O it precisa retorna que o teste foi bem sucedido, status 201?
+ Se retornar com erro, 402 está errado o teste?
+   Não necessariamente o teste está "errado", mas ele falhou. No RSpec, o resultado do it depende da sua expectativa (expect).
+
+ Na próxima explicação falaremos deste método expect
+ 
+
+
 =end
 
 
