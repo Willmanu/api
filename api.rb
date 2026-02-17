@@ -3352,26 +3352,61 @@ end
    Aqui temos isso -> it + a frase ->"creates a user and returns 201(cria um usuário e retorna 201)
      aqui o it esta descrevendo o que se espera de resposta do teste
   
-  Na primeira linha temos o titulo falando que é um teste para User API
-  Na segunda linha fala que é um post, ou seja, vai ser criado um novo usuário
-  Aqui nesta linha: quando este usuário for criado, isto ou ele ou ela retornar o status 201
-    o status 201 significa: que a requisição foi bem sucedida
+   Na primeira linha temos o titulo falando que é um teste para "User API"
+     se o teste falhar precisamos de um retorno avisando qual teste falhou, e é por conta desse titulo que sabemos identificar o teste que falhou ou foi bem sucedido.
 
- Dentro do bloco de código do it(do ....end) temos o params trazendo os dados. E é aqui agora, que vai acontecer a ação que deve ser tomada para validar este dados.
+   Na segunda linha fala que é um post, ou seja, vai ser criado um novo usuário
+     aqui está o tipo da requisição -> criar um novo
+
+   Na terceira linha temos -> "quando os dados são válidos", isso é a condição do teste
+    
+   Aqui nesta linha do it: quando este usuário for criado, isto ou ele ou ela retornar o status 201
+     o status 201 significa: que a requisição foi bem sucedida
+
+   Dentro do bloco de código do it(do ....end) temos o params trazendo os dados. E é aqui agora, que vai acontecer a ação que deve ser tomada para validar este dados.
+
+   Perceba que o it conta o que aconteceu de fato, da o retorno que se espera, que é uma resposta que tudo aconteceu bem sucedido.
+     O que se espera aqui no teste é isso: que o usuário seja criado no banco sem erros.
+
+   Aqui esse teste é feito para que o retorno seja bem sucedido (Caminho Feliz) status 201.
+
+   O it precisa retorna que o teste foi bem sucedido, status 201?
+   Se retornar com erro, 402 está errado o teste?
+     Não necessariamente o teste está "errado", mas ele falhou. No RSpec, o resultado do it depende da sua expect(expectativa ou esperança).
+       O it só está afirmando o que literalmente precisa retornar.
+
+
  
- Perceba que o it conta o que aconteceu de fato, da o retorno que se espera, que é uma resposta que tudo aconteceu bem sucedido.
-   O que se espera aqui no teste é isso: que o usuário seja criado no banco sem erros.
-  
- Aqui esse teste é feito para que o retorno seja bem sucedido (Caminho Feliz) status 201.
-
- O it precisa retorna que o teste foi bem sucedido, status 201?
- Se retornar com erro, 402 está errado o teste?
-   Não necessariamente o teste está "errado", mas ele falhou. No RSpec, o resultado do it depende da sua expectativa (expect).
-
- Na próxima explicação falaremos deste método expect
  
+Linha 5º 
 
 
+                  expect(response).to have_http_status(:created)
+       
+ EXPECT:
+   Significa expectativa -> É a esperança ou crença baseada na probabilidade de que algo aconteça no futuro.
+
+   O é o coração dos seus testes no RSpec. Ele é o método que você usa para definir uma expectativa: você diz ao RSpec o que espera que aconteça quando o seu código for executado.
+      Pense nele como uma frase: "Eu espero que [isso] faça [aquilo]"
+
+   Como ele funciona?
+     A sintaxe básica é sempre:
+       expect(resultado_real).to matcher(valor_esperado)   
+
+     expect(...): Envolve o objeto ou a ação que você quer testar.
+
+     .to: Indica que você espera que a condição seja verdadeira.
+
+     matcher: É o "verificador" (ex: eq, include, have_http_status)
+
+     Isso expect(response).to have_http_status(:created) significa isso abaixo
+     expectativa(resposta).para ter_status_http(201)
+
+   expect(response) -> dentro deste parentese estou passando response, ou seja, resposta
+   .to significa para e have é ter, ou seja,
+      espero que minha resposta seja status 201
+       "Eu espero que [isso] faça [aquilo]"
+      expect(response).to have_http_status(:created)
 =end
 
 
