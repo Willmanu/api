@@ -3436,7 +3436,7 @@ Linha 5º
      Isso -> expect(response).to have_http_status(:created) significa isso abaixo
         expectativa(resposta).para ter_status_http(201)
 
-   expect(response) -> dentro deste parentese estou passando response, ou seja, resposta.
+   expect(response) -> dentro deste parentese estou recebendo response, ou seja, resposta.
      expect está guardando o resultado do teste.
   
    .to significa -> para e have é ter, ou seja,
@@ -3541,7 +3541,7 @@ Linha 5º
 
   
 
-                                                Resumo do fluxo do teste
+                                     Resumo do fluxo do teste
 =end
 
 require 'rails_helper'
@@ -3652,7 +3652,42 @@ params.require(:user).permit(:name, :active)
 
 expect(response).to have_http_status(:created)
 =begin
+ O método expect recebe a resposta(response) vindo da action.
+   A action created processa a requisição e devolve um único objeto chamado -> response.
+     Dentro desse objeto response já existem várias informações juntas: o corpo da resposta (JSON/HTML), os headers e, claro, o status code (201, 200, 404, etc).
+
+ O matcher -> have_http_status é o método que recebe o status http.
+   neste caso o que foi passado(pelo dev) para o método foi a chave :created e, esse é o valor esperado.
+     dentro desta chave tem o valor 201, escreveu :created é o mesmo que escrever 201, ou seja, status que representa que a requisição foi bem-sucedida e resultou na criação de um novo recurso.
+       exemplo de status:
+         :ok = 200
+         :created = 201
+         :not_found = 404
+         :unprocessable_entity = 422
+   Aqui no matcher passamos o valor que esperamos de resultado do teste.
+
+ O método .to faz a comparação entre esses dois métodos.
+   ele é o executor -> olha o valor dentro de expect e pergunta ao matcher:
+     "Esse valor aqui bate com o que você espera?"
  
+ Resumo:
+   RSpec é o teste.
+     expect(response): Você está entregando o objeto inteiro da resposta para o RSpec.
+
+     :created: Este não vem da action. Você escreveu isso no arquivo de teste. Aqui estamos dizendo: "Eu espero que o status seja 201".
+
+     have_http_status: Entra no objeto response, procura especificamente o número do status e prepara a comparação com o (:created).
+       
+      .to: É o juiz. Ele pega o que o matcher achou dentro do response e compara com o seu created.
+        
+ Tanto uma resposta com valor positivo, ou seja, com valor esperado ou uam resposta com valor negativo, vão para o json
+=end
+
+json = JSON.parse(response.body)
+=begin
+ json é a variável que recebe a resposta de retorno.
+
+
 
 
 =end
