@@ -3426,7 +3426,15 @@ Linha 5º
        expect(resultado_real).to matcher(valor_esperado) resultado real + valor esperado  
 
      expect(...): Envolve o objeto ou a ação que você quer testar.
-       Cria um objeto especial do RSpec chamado "ExpectationTarget", que guarda o resultado da sua requisição
+       Cria um objeto especial do RSpec chamado "ExpectationTarget", que guarda o resultado da sua requisição que é o response.
+		 por isso expect(response)
+									
+
+ Response é um objeto de resposta HTTP, é o objeto retornado após fazer uma requisição (GET, POST, etc.) que representa a resposta enviada por um servidor web.
+     Ao fazer uma requisição para um servidor (usando bibliotecas como Net::HTTP ou Faraday), o objeto response é um pacote completo que contém:
+         Status Code: (Ex: 200 OK, 201 Created, 404 Not Found).
+         Headers: Metadados como a data e o tipo do conteúdo.
+         Body: O conteúdo real que o servidor enviou (o "corpo" da mensagem).
 
      .to: Indica que você espera que a condição seja verdadeira.
         É um método chamado dentro desse objeto. Ele diz: "Verifique se o que eu guardei satisfaz a condição a seguir".
@@ -3440,7 +3448,7 @@ Linha 5º
      expect está guardando o resultado do teste.
   
    .to significa -> para e have é ter, ou seja,
-      espero que minha resposta tenha status 201
+      espero que minha resposta(response) tenha status 201(:created)
        "Eu espero que [isso] faça [aquilo]"
       expect(response).to have_http_status(:created)
         have_http_status(:created): É o critério de sucesso
@@ -3454,13 +3462,46 @@ Linha 5º
 
 
 
-                           json = JSON.parse(response.body)
- json é a variável que esta recebendo a resposta
+                            json = JSON.parse(response.body)
+  json é a variável(quando em letra minúscula é variável) que recebe em si a resposta(response) de retorno.
+     Para que json receba o response, precisamos chamar o modulo JSON e passar (response)
+	     json = JSON(response) essa seria a linha de código para isso, porém o response contém elementos em si que a variável json não precisa levar. 
+
+
+
+  Response é um objeto de resposta HTTP, é o objeto retornado após fazer uma requisição (GET, POST, etc.) que representa a resposta enviada por um servidor web.
+     Ao fazer uma requisição para um servidor (usando bibliotecas como Net::HTTP ou Faraday), o objeto response é um pacote completo que contém:
+         Status Code: (Ex: 200 OK, 201 Created, 404 Not Found).
+         Headers: Metadados como a data e o tipo do conteúdo.
+         Body: O conteúdo real que o servidor enviou (o "corpo" da mensagem).
+
+   Perceba que response contém 3 elementos dentro de si -> status code, Headers e Body
+
+ A requisição do teste "Users API" foi para dentro da action created.
+     essa action created, processou os dados e criou o objeto response, contendo em si a resposta desse processamento.
+
+ Como vimos acima o objeto response vindo da action created, contém 3 elementos.
+     a variável json só precisa levar o Body, ou seja, o corpo. É por isso que temos o método .body
+
  
+ O .body é um método do response que pega somente o Body de response, para enviar a variável json
+     O Ruby não pode tentar ler o "pacote inteiro" como se fosse texto. Você precisa dizer especificamente: "Ei, ignore o status e os cabeçalhos(headers), eu só quero o conteúdo (body) que está lá dentro". O response.body geralmente entrega esse conteúdo como uma String bruta (puro texto).
+ É por conta de disso -> String bruta (puro texto), que usamos o parse.
+
+ JSON é um módulo(quando em letra maiúscula é um módulo)
+   módulo é uma caixa de ferramentas.
+     essas ferramentas são as funções ou métodos.
+ 
+
  JSON.parse
-   JSON: é o texto bruto
-   O .parse:
-     pega esse texto bruto e transforma em um Hash ou Array, que são a estrutura de dados que o json suporta. Transforma em um objeto manipulável.
+   Aqui o módulo JSON esta usando uma ferramenta(função/método) chamada parse
+
+
+ 
+
+     JSON: é o texto bruto
+       O .parse:
+         pega esse texto bruto e transforma em um Hash ou Array, que são a estrutura de dados que o json suporta. Transforma em um objeto manipulável.
 
  response.body
    response: contém o resultado do teste
@@ -3528,9 +3569,9 @@ Linha 5º
 
  Como ela é montada:
    Quando você usa o matcher eq, o RSpec faz uma comparação lógica e, se o resultado for falso, ele monta essa mensagem explicativa:
-   Expected (Esperado): É o valor que você colocou dentro dos parênteses do eq(...).
+   Expected(Esperado): É o valor que você colocou dentro dos parênteses do eq(...).
 
-   Got (Obteve): É o valor real que o seu código produziu (o que estava dentro do expect(...)).
+   Got(Obteve): É o valor real que o seu código produziu (o que estava dentro do expect(...).
 
  Por que isso é útil?
    Diferente de um simples erro que "deu errado", essa mensagem te dá o diagnóstico exato:
@@ -3576,13 +3617,13 @@ RSpec.describe "Users API", type: :request
 describe "POST /users" do
 =begin
  Enquanto o describe anterior trata de configurações:
-   nome do teste para retorno de falha e habilita métodos http para o teste
+   nome do teste para retorno de falha e habilita métodos http para o teste.
     
  Este describe -> "POST /users", trata de qual action ou endpoint será testada:
    post -> indicando que é entrada de dados
    "/user" é a rota, indicando que estes dados é para a tabela User
 
- O Rails diz: os dados são de um usuário novo, então é action crete e vão para tabela User.
+ O Rails diz: os dados são de um usuário novo, então vão para a action created e de lá, vão para tabela User.
 =end
 
 context "when data is valid" do
@@ -3680,14 +3721,26 @@ expect(response).to have_http_status(:created)
        
       .to: É o juiz. Ele pega o que o matcher achou dentro do response e compara com o seu created.
         
- Tanto uma resposta com valor positivo, ou seja, com valor esperado ou uam resposta com valor negativo, vão para o json
+ Tanto uma resposta com valor positivo, ou seja, com valor esperado ou uma resposta com valor negativo, vão para o json
 =end
 
 json = JSON.parse(response.body)
 =begin
- json é a variável que recebe a resposta de retorno.
+ A variável json esta recebendo a resposta do módulo JSON.
+	 Antes de entregar a resposta para a variável json, o módulo JSON transforma a resposta em dados manipuláveis.
+	     O método .body entrega somente o corpo da mensagem, deixando de fora o headers e status
 
+		 O método .parse transforma de texto bruto para array ou hash, estrutura essa que o json aceita.
+=end
 
+expect(json["name"].to eq("William"))
+=begin
+ O expect acessa a chave name de json
+  O que se espera aqui é que esta chave contenha o mesmo nome que foi passado ao método eq -> "William"
 
+  O expect garante que o teste está correto.
+     O primeiro garante que o usuário foi criado, verificando o status 201. Porém esse não garante que o usuário que foi criado é o que veio na requisição.
 
+  Por isso esse segundo expect.
+	 este garante que o usuário que foi criado é o mesmo da requisição.
 =end
