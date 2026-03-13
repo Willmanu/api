@@ -1269,7 +1269,7 @@ end
 
  & -> que parece um operador logico, chama-se safe(seguro)navigate operator
  Em português: operador de navegação segura
- Ele chama o método(user_params) só se existir user no BD
+ Ele chama o método .update só se existir user no BD
  ANTENÇÂO o & age no BD
 
  user_params -> o nome do método ou (função) privado
@@ -2409,7 +2409,7 @@ end
   rescue_from ActiveRecord::RecordInvalid
    Porque o registro foi invalido(RecordInvalid)
 
- Com isso podemos dizer que a exceção dependo do erro, do que acontece.
+ Com isso podemos dizer que a exceção depende do erro, do que acontece.
 
   Além da exceção -> ActiveRecord::RecordInvalid com status HTTP 422
   Temos:
@@ -2949,12 +2949,12 @@ end
 
                       CRIANDO AMBIENTE PARA O TESTE
 
-                      rails new . --api 
+                      Comando -> rails new . --api 
 
  Para conseguir fazer os teste precisamos dos arquivos necessário.
  Preciso criar uma aplicação que traga as pasta necessárias para os testes.
- O comando para isso é: rails new . --api no terminal(bash) dentro da pasta usada para estudo.
-   O ponto . significa em new . --api:
+ O comando para isso é -> rails new . --api no terminal(bash) dentro da pasta usada para estudo.
+   O ponto . que esta no comando-> new . --api significa:
      "Crie a aplicação Rails aqui dentro dessa pasta"
       E o --api cria uma aplicação Rails modo API (sem views, assets etc).
 
@@ -3605,7 +3605,7 @@ RSpec.describe "Users API", type: :request
    describe agrupa o teste e descreve o que esta sendo testado
  
  RSpec está dizendo:
-   descreva que este teste é chamado de User API, é do tipo request.
+   descreva que este teste é chamado de "User API" e é do tipo request.
      chamá-lo de "User API" indica seu titulo, pois se falhar, é por este nome que saberemos qual teste falhou.
 
    type: :request esta dizendo que este teste é de requisição http e isso habilita:
@@ -3629,14 +3629,16 @@ describe "POST /users" do
 context "when data is valid" do
 =begin
  Essa linha diz qual é o cenário do teste -> “Quando os dados são válidos”
-   quando os dados entrarem no sistema e forem persistidos no banco...entra a próxima linha
+   quando os dados entrarem no sistema e forem validados para serem persistidos no banco...entra a próxima linha
 
 =end
 
 it "creates a user and returns 201" do
 =begin
  Descreve o que o teste deve fazer.
-  “cria um usuário e retorna 201”
+   Na linha acima vimos:
+     quando os dados entrarem no sistema e forem validados para serem persistidos no banco...
+       it que significa isto ou ele/ela “cria um usuário e retorna 201”
 
  Aqui no método it, é o teste executável
    tudo que esta dentro do do....end deste it, trata do recebimento dos dados até o retorno da resposta.
@@ -3644,6 +3646,9 @@ it "creates a user and returns 201" do
        post -> criando os dados para o teste
        expect -> comparando a resposta com o status
    end
+
+   Aqui esta dizendo que o que o teste deve fazer é criar o usuário e retornar status 201 -> :created
+     retornar status :created que é 201 significa que deu tudo certo na criação deste usuário
 =end
 
 post "/users", params: {
@@ -3695,7 +3700,10 @@ expect(response).to have_http_status(:created)
 =begin
  O método expect recebe a resposta(response) vindo da action.
    A action created processa a requisição e devolve um único objeto chamado -> response.
-     Dentro desse objeto response já existem várias informações juntas: o corpo da resposta (JSON/HTML), os headers e, claro, o status code (201, 200, 404, etc).
+     Dentro desse objeto response já existem várias informações juntas:
+       o corpo da resposta (JSON/HTML)
+       os headers
+       o status code (201, 200, 404, etc).
 
  O matcher -> have_http_status é o método que recebe o status http.
    neste caso o que foi passado(pelo dev) para o método foi a chave :created e, esse é o valor esperado.
@@ -3736,11 +3744,19 @@ json = JSON.parse(response.body)
 expect(json["name"].to eq("William"))
 =begin
  O expect acessa a chave name de json
-  O que se espera aqui é que esta chave contenha o mesmo nome que foi passado ao método eq -> "William"
+  O que se espera aqui é que esta chave contenha o mesmo nome que foi passado ao método .eq que neste caso é-> "William"
 
   O expect garante que o teste está correto.
-     O primeiro garante que o usuário foi criado, verificando o status 201. Porém esse não garante que o usuário que foi criado é o que veio na requisição.
+     O primeiro garante que o usuário foi criado, verificando o status 201. Porém esse expect não garante que o usuário que foi criado é o que veio na requisição que neste caso é-> "William".
 
   Por isso esse segundo expect.
-	 este garante que o usuário que foi criado é o mesmo da requisição.
+	 este garante que o usuário que foi criado é o mesmo da requisição o-> "William".
+
+ Perceba que o expect é muito importante para verificar se realmente o que é esperado esta acontecendo.
+
+
+                                    IMPORTANTÍCIMO
+
+ Aqui estamos testando o sucesso, cenário que os dados são persistidos corretamente.
+ Ma para cada teste posítivo
 =end
